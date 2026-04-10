@@ -5,7 +5,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
           <div>
             <h3 className="font-display font-semibold text-[var(--text-primary)] mb-3">
-              Seawolf Ask
+              Ask Seawolves
             </h3>
             <p className="text-[var(--text-muted)] leading-relaxed">
               Answers are generated from official Stony Brook University sources.
@@ -43,7 +43,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-[var(--border)] text-center text-xs text-[var(--text-muted)]">
-          &copy; {new Date().getFullYear()} Seawolf Ask
+          &copy; {new Date().getFullYear()} Ask Seawolves
         </div>
       </div>
     </footer>

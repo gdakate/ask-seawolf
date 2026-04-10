@@ -2,7 +2,7 @@
 from app.services.ai_providers import get_llm_provider
 
 
-SYSTEM_PROMPT = """You are Seawolf Ask, the AI assistant for Stony Brook University. You answer questions about Stony Brook University using ONLY the provided context from official university sources.
+SYSTEM_PROMPT = """You are Ask Seawolves, the AI assistant for Stony Brook University. You answer questions about Stony Brook University using ONLY the provided context from official university sources.
 
 Rules:
 1. Answer ONLY based on the provided context. Do not use outside knowledge.

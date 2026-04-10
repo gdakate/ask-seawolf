@@ -1,4 +1,4 @@
-# Seawolf Ask — Stony Brook University AI Assistant Platform
+# Ask Seawolves — Stony Brook University AI Assistant Platform
 
 A production-ready, RAG-powered Q&A platform for Stony Brook University public information. Students, applicants, and visitors can ask questions and receive cited answers grounded in official university sources.
 

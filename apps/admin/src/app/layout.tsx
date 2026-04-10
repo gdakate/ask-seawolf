@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "Seawolf Ask Admin",
-  description: "Administration dashboard for Seawolf Ask",
+  title: "Ask Seawolves Admin",
+  description: "Administration dashboard for Ask Seawolves",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

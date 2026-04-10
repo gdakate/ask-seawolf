@@ -51,7 +51,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-sbu-red text-white font-bold text-lg mb-3">SB</div>
           <h1 className="text-xl font-semibold text-gray-900">Admin Portal</h1>
-          <p className="text-sm text-gray-500 mt-1">Seawolf Ask</p>
+          <p className="text-sm text-gray-500 mt-1">Ask Seawolves</p>
         </div>
 
         {/* Tabs */}
