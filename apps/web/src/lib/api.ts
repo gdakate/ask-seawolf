@@ -1,5 +1,24 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+const SBU_DOMAIN = "stonybrook.edu";
+
+export function isSbuEmail(email: string) {
+  return email.toLowerCase().endsWith(`@${SBU_DOMAIN}`);
+}
+
+export function getPublicToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("public_token");
+}
+
+export function setPublicToken(token: string) {
+  if (typeof window !== "undefined") localStorage.setItem("public_token", token);
+}
+
+export function clearPublicToken() {
+  if (typeof window !== "undefined") localStorage.removeItem("public_token");
+}
+
 export interface Citation {
   title: string;
   url: string;
@@ -100,4 +119,37 @@ export async function searchDocuments(
 
 export async function getHealth(): Promise<{ status: string }> {
   return apiFetch("/api/health");
+}
+
+// ─── Public Auth ──────────────────────────────────────────────────────
+
+export interface PublicAuthResponse {
+  access_token: string;
+  email: string;
+  name: string;
+}
+
+export async function publicRegister(
+  email: string,
+  password: string,
+  name: string
+): Promise<PublicAuthResponse> {
+  const data = await apiFetch<PublicAuthResponse>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password, name }),
+  });
+  setPublicToken(data.access_token);
+  return data;
+}
+
+export async function publicLogin(
+  email: string,
+  password: string
+): Promise<PublicAuthResponse> {
+  const data = await apiFetch<PublicAuthResponse>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+  setPublicToken(data.access_token);
+  return data;
 }

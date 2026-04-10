@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 from app.core.database import get_db
 from app.core.auth import (
-    hash_password, verify_password, create_access_token, get_current_admin,
+    hash_password, verify_password, create_access_token, get_current_admin, validate_sbu_email,
 )
 from app.core.config import get_settings
 from app.models.models import (
@@ -16,7 +16,7 @@ from app.models.models import (
     DocumentStatus, JobStatus, SourceCategory,
 )
 from app.schemas.schemas import (
-    LoginRequest, LoginResponse, SourceCreate, SourceUpdate, SourceOut,
+    LoginRequest, LoginResponse, RegisterRequest, SourceCreate, SourceUpdate, SourceOut,
     DocumentOut, DocumentDetail, ChunkOut, CrawlJobOut, IndexJobOut,
     FAQCreate, FAQUpdate, FAQOut, FeedbackOut,
     ChatSessionOut, ChatMessageOut, DashboardStats,
@@ -32,6 +32,7 @@ router = APIRouter(prefix="/admin")
 
 @router.post("/auth/login", response_model=LoginResponse)
 async def admin_login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
+    validate_sbu_email(req.email)
     stmt = select(AdminUser).where(AdminUser.email == req.email, AdminUser.is_active == True)
     result = await db.execute(stmt)
     user = result.scalar_one_or_none()
@@ -39,6 +40,20 @@ async def admin_login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     user.last_login_at = datetime.now(timezone.utc)
+    token = create_access_token({"sub": user.email, "role": user.role})
+    return LoginResponse(access_token=token, email=user.email, role=user.role)
+
+
+@router.post("/auth/register", response_model=LoginResponse, status_code=201)
+async def admin_register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    validate_sbu_email(req.email)
+    existing = (await db.execute(select(AdminUser).where(AdminUser.email == req.email))).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    user = AdminUser(email=req.email, password_hash=hash_password(req.password), name=req.name)
+    db.add(user)
+    await db.flush()
     token = create_access_token({"sub": user.email, "role": user.role})
     return LoginResponse(access_token=token, email=user.email, role=user.role)
 

@@ -1,17 +1,21 @@
-"""Public API routes: chat, topics, search, feedback, health."""
+"""Public API routes: auth, chat, topics, search, feedback, health."""
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from app.core.database import get_db
+from app.core.auth import (
+    hash_password, verify_password, create_access_token, validate_sbu_email,
+)
 from app.models.models import (
     Source, Document, Chunk, ChatSession, ChatMessage, UserFeedback,
-    OfficeContact, FAQEntry, SourceCategory,
+    OfficeContact, FAQEntry, SourceCategory, PublicUser,
 )
 from app.schemas.schemas import (
     ChatQueryRequest, ChatQueryResponse, Citation, FeedbackCreate, FeedbackOut,
     TopicOut, DocumentOut, OfficeContactOut, SearchResult,
+    RegisterRequest, PublicLoginResponse, LoginRequest,
 )
 from app.services.retrieval import (
     retrieve_chunks, build_citations, find_office_routing,
@@ -20,6 +24,36 @@ from app.services.retrieval import (
 from app.services.answering import generate_answer, should_warn_term_dependent
 
 router = APIRouter()
+
+
+# ─── Auth ────────────────────────────────────────────────────────────
+
+@router.post("/auth/register", response_model=PublicLoginResponse, status_code=201)
+async def public_register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    validate_sbu_email(req.email)
+    existing = (await db.execute(select(PublicUser).where(PublicUser.email == req.email))).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    user = PublicUser(email=req.email, password_hash=hash_password(req.password), name=req.name)
+    db.add(user)
+    await db.flush()
+    token = create_access_token({"sub": str(user.id), "email": user.email, "type": "public"})
+    return PublicLoginResponse(access_token=token, email=user.email, name=user.name)
+
+
+@router.post("/auth/login", response_model=PublicLoginResponse)
+async def public_login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
+    validate_sbu_email(req.email)
+    stmt = select(PublicUser).where(PublicUser.email == req.email, PublicUser.is_active == True)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user or not verify_password(req.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    user.last_login_at = datetime.now(timezone.utc)
+    token = create_access_token({"sub": str(user.id), "email": user.email, "type": "public"})
+    return PublicLoginResponse(access_token=token, email=user.email, name=user.name)
 
 
 @router.get("/health")

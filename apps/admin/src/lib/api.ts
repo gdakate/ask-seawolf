@@ -50,6 +50,15 @@ export async function login(email: string, password: string) {
   return data;
 }
 
+export async function register(email: string, password: string, name: string) {
+  const data = await adminFetch<{ access_token: string; email: string; role: string }>(
+    "/api/admin/auth/register",
+    { method: "POST", body: JSON.stringify({ email, password, name }) }
+  );
+  setToken(data.access_token);
+  return data;
+}
+
 // Dashboard
 export const getDashboard = () => adminFetch<any>("/api/admin/dashboard");
 

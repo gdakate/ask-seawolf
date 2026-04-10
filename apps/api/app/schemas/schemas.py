@@ -17,6 +17,17 @@ class LoginResponse(BaseModel):
     email: str
     role: str
 
+class RegisterRequest(BaseModel):
+    email: str
+    password: str = Field(..., min_length=8)
+    name: str = Field(..., min_length=1, max_length=255)
+
+class PublicLoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    email: str
+    name: str
+
 
 # ─── Source ──────────────────────────────────────────────────────────
 

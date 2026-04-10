@@ -10,7 +10,20 @@ from app.core.config import get_settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
+security_optional = HTTPBearer(auto_error=False)
 settings = get_settings()
+
+SBU_DOMAINS = {"stonybrook.edu", "cs.stonybrook.edu", "ams.stonybrook.edu"}
+
+
+def validate_sbu_email(email: str) -> None:
+    """Raise 400 if email is not from an allowed SBU domain."""
+    domain = email.lower().split("@")[-1] if "@" in email else ""
+    if domain not in SBU_DOMAINS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Only @stonybrook.edu email addresses are allowed.",
+        )
 
 
 def hash_password(password: str) -> str:
@@ -41,6 +54,17 @@ async def get_current_admin(
     """Dependency to extract and validate admin user from JWT."""
     payload = decode_token(credentials.credentials)
     email = payload.get("sub")
-    if not email:
+    if not email or payload.get("type") == "public":
         raise HTTPException(status_code=401, detail="Invalid token")
     return {"email": email, "role": payload.get("role", "admin")}
+
+
+async def get_current_public_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    """Dependency to extract and validate public user from JWT."""
+    payload = decode_token(credentials.credentials)
+    user_id = payload.get("sub")
+    if not user_id or payload.get("type") != "public":
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return {"id": user_id, "email": payload.get("email", "")}
