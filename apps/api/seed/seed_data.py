@@ -127,7 +127,7 @@ FAQS = [
 async def seed():
     async with async_session() as db:
         # Check if already seeded
-        result = await db.execute(select(AdminUser))
+        result = await db.execute(select(AdminUser).limit(1))
         if result.scalar_one_or_none():
             print("Database already seeded. Skipping.")
             return

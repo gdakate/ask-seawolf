@@ -1,5 +1,6 @@
 """AI provider abstraction for embeddings and text generation."""
 import abc
+import re
 import numpy as np
 import hashlib
 from app.core.config import get_settings
@@ -43,28 +44,108 @@ class MockEmbeddingProvider(EmbeddingProvider):
 
 
 class MockLLMProvider(LLMProvider):
-    """Mock LLM for local development - returns structured template responses."""
+    """Mock LLM for local development — handles both classifier and answer generation."""
+
+    _PRIVATE_KEYWORDS = [
+        "my grade", "my grades", "my gpa", "did i pass", "did i fail",
+        "what grade did i", "grade from last", "gpa last", "what was my gpa",
+        "my schedule", "my class", "my courses", "what classes am i",
+        "my bill", "my balance", "account balance", "what i owe",
+        "my financial aid", "my aid", "my award", "did i get aid", "when does my aid",
+        "my housing", "my room", "my roommate",
+        "my netid", "my password", "my account", "my login",
+        "am i registered", "am i enrolled", "enrolled this term",
+        "my enrollment", "my refund", "my transcript", "check my transcript",
+        "can you check my", "my degree audit", "my holds",
+    ]
+    _AMBIGUOUS_TRIGGERS = {
+        "tell me about registration": "Are you asking about course registration for a specific term (e.g., Fall 2026), or about registering as a new student?",
+        "what are the fees": "Are you asking about tuition fees, housing fees, dining fees, or another charge?",
+        "how do i apply": "Are you asking about undergraduate admissions, graduate admissions, or a specific program?",
+        "what's the deadline": "Which deadline — admissions, financial aid, housing, or course add/drop?",
+        "what is the deadline": "Which deadline — admissions, financial aid, housing, or course add/drop?",
+        "tell me about housing": "Are you asking about on-campus housing options, the application process, or costs?",
+        "tell me about financial aid": "Are you asking about types of aid, eligibility, deadlines, or the application process?",
+    }
+    _OUT_OF_SCOPE_KEYWORDS = [
+        "weather", "temperature", "forecast",
+        "harvard", "mit", "yale", "stanford", "columbia", "cornell", "princeton",
+        "nyu", "other university", "other school", "different university",
+        "what is 2", "solve this", "calculate", "math problem",
+        "recipe", "how to cook", "stock price", "bitcoin",
+        "who is the president", "news today", "sports score",
+    ]
 
     async def generate(self, prompt: str, system: str = "", max_tokens: int = 1024) -> str:
-        # Extract question and context from prompt
-        question = ""
+        import json as _json
+
+        # ── Classification request ────────────────────────────────────
+        if system and "intent classifier" in system.lower():
+            q_matches = re.findall(r'Q:\s*"(.+?)"', prompt)
+            q = q_matches[-1].lower() if q_matches else prompt.lower()
+
+            # Out of scope
+            if any(kw in q for kw in self._OUT_OF_SCOPE_KEYWORDS):
+                return _json.dumps({
+                    "intent": "out_of_scope_non_sbu",
+                    "confidence": 0.97,
+                    "reasoning": "Query is unrelated to Stony Brook University.",
+                    "clarification_question": None,
+                })
+
+            # Private
+            for kw in self._PRIVATE_KEYWORDS:
+                if kw in q:
+                    return _json.dumps({
+                        "intent": "private_account_specific",
+                        "confidence": 0.97,
+                        "reasoning": f"Query contains '{kw}', indicating personal account data.",
+                        "clarification_question": None,
+                    })
+
+            # Ambiguous
+            for trigger, cq in self._AMBIGUOUS_TRIGGERS.items():
+                if trigger in q and len(q.split()) <= 8:
+                    return _json.dumps({
+                        "intent": "ambiguous_public",
+                        "confidence": 0.88,
+                        "reasoning": "Query is too vague to answer without clarification.",
+                        "clarification_question": cq,
+                    })
+
+            # Human support
+            human_kws = ["need to talk", "speak to someone", "complaint", "urgent", "overwhelmed"]
+            if any(kw in q for kw in human_kws):
+                return _json.dumps({
+                    "intent": "human_support_needed",
+                    "confidence": 0.93,
+                    "reasoning": "User wants to speak with a person.",
+                    "clarification_question": None,
+                })
+
+            # Default: public school info
+            return _json.dumps({
+                "intent": "public_school_info",
+                "confidence": 0.85,
+                "reasoning": "Appears to be a question about public SBU information.",
+                "clarification_question": None,
+            })
+
+        # ── Answer generation (has [CONTEXT] block) ──
         context_lines = []
         in_context = False
-
         for line in prompt.split("\n"):
             stripped = line.strip()
-            if stripped.lower().startswith("question:"):
-                question = stripped.split(":", 1)[1].strip()
-            elif stripped.startswith("[Source"):
+            if stripped.startswith("[Source"):
                 in_context = True
                 context_lines.append(stripped)
-            elif in_context and stripped:
+            elif in_context and stripped and not stripped.startswith("[/CONTEXT]"):
                 context_lines.append(stripped)
+            elif stripped.startswith("[/CONTEXT]"):
+                in_context = False
 
         if context_lines:
-            # Return the first relevant chunk content as the answer
             content = " ".join(context_lines[:6])
-            # Trim to a reasonable length
             if len(content) > 600:
                 content = content[:600].rsplit(" ", 1)[0] + "..."
             return content
