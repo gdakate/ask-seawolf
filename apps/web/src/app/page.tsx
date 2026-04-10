@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 const TOPICS = [
   { key: "admissions", name: "Admissions", desc: "Applications, deadlines & requirements", icon: "🎓" },
@@ -25,12 +26,16 @@ const SAMPLE_QUESTIONS = [
 export default function HomePage() {
   const [query, setQuery] = useState("");
   const router = useRouter();
+  const { isLoggedIn, loading } = useAuth();
 
   const handleAsk = (q?: string) => {
     const question = q || query;
-    if (question.trim()) {
-      router.push(`/chat?q=${encodeURIComponent(question.trim())}`);
+    if (!question.trim()) return;
+    if (!isLoggedIn && !loading) {
+      router.push(`/login?redirect=${encodeURIComponent(`/chat?q=${encodeURIComponent(question.trim())}`)}`);
+      return;
     }
+    router.push(`/chat?q=${encodeURIComponent(question.trim())}`);
   };
 
   return (

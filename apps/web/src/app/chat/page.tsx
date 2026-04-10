@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { sendChatQuery, type ChatResponse, type Citation } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Message {
   id: string;
@@ -18,6 +19,8 @@ interface Message {
 
 function ChatContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { isLoggedIn, loading: authLoading } = useAuth();
   const initialQuery = searchParams.get("q");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -27,16 +30,36 @@ function ChatContent() {
   const inputRef = useRef<HTMLInputElement>(null);
   const processedInitial = useRef(false);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isLoggedIn) {
+      const current = window.location.pathname + window.location.search;
+      router.replace(`/login?redirect=${encodeURIComponent(current)}`);
+    }
+  }, [isLoggedIn, authLoading, router]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   useEffect(() => {
-    if (initialQuery && !processedInitial.current) {
+    if (initialQuery && !processedInitial.current && isLoggedIn) {
       processedInitial.current = true;
       handleSend(initialQuery);
     }
-  }, [initialQuery]);
+  }, [initialQuery, isLoggedIn]);
+
+  if (authLoading || !isLoggedIn) {
+    return (
+      <div className="flex items-center justify-center h-64 text-[var(--text-muted)]">
+        <div className="flex gap-1">
+          <span className="w-2 h-2 rounded-full bg-sbu-red/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+          <span className="w-2 h-2 rounded-full bg-sbu-red/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+          <span className="w-2 h-2 rounded-full bg-sbu-red/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+        </div>
+      </div>
+    );
+  }
 
   const handleSend = async (text?: string) => {
     const query = (text || input).trim();

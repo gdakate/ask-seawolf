@@ -8,14 +8,16 @@ import { Suspense } from "react";
 const SBU_DOMAIN = "stonybrook.edu";
 
 function LoginForm() {
-  const [tab, setTab] = useState<"login" | "register">("login");
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<"login" | "register">(
+    searchParams.get("tab") === "register" ? "register" : "login"
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/chat";
 
   const emailError = email && !isSbuEmail(email)
