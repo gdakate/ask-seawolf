@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: sbu_user
+          POSTGRES_PASSWORD: sbu_pass
+          POSTGRES_DB: sbu_assistant
+        ports:
+          - 5432:5432
+        options: --health-cmd "pg_isready" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          cd apps/api
+          pip install -r requirements.txt
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://sbu_user:sbu_pass@localhost:5432/sbu_assistant
+          DATABASE_URL_SYNC: postgresql://sbu_user:sbu_pass@localhost:5432/sbu_assistant
+          AI_PROVIDER: mock
+          JWT_SECRET: test-secret
+        run: |
+          cd apps/api
+          python -m pytest tests/ -v
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [web, admin]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install and build
+        run: |
+          cd apps/${{ matrix.app }}
+          npm install
+          npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -t sbu-api ./apps/api
+
+      - name: Build Web image
+        run: docker build -t sbu-web ./apps/web
+
+      - name: Build Admin image
+        run: docker build -t sbu-admin ./apps/admin
