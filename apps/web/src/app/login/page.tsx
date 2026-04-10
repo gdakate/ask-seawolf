@@ -12,12 +12,12 @@ function LoginForm() {
   const [tab, setTab] = useState<"login" | "register">(
     searchParams.get("tab") === "register" ? "register" : "login"
   );
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [name, setName]         = useState("");
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(false);
+  const router   = useRouter();
   const redirect = searchParams.get("redirect") || "/chat";
 
   const emailError = email && !isSbuEmail(email)
@@ -47,11 +47,20 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] px-4">
-      <div className="w-full max-w-sm">
+    <div className="hero-bg min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+
+      {/* Radial light from above */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255,255,255,0.35) 0%, transparent 65%)",
+        }}
+      />
+
+      <div className="relative w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-sbu-red text-white font-bold text-xl mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-sbu-red text-white font-bold text-xl mb-4 shadow-lg">
             SW
           </div>
           <h1 className="text-2xl font-bold text-[var(--text-primary)]">Seawolf Ask</h1>
@@ -61,32 +70,25 @@ function LoginForm() {
         </div>
 
         {/* Tabs */}
-        <div className="flex mb-4 bg-[var(--bg-secondary)] rounded-lg p-1 border border-[var(--border)]">
-          <button
-            onClick={() => { setTab("login"); setError(""); }}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-              tab === "login"
-                ? "bg-white dark:bg-[var(--bg-primary)] shadow text-[var(--text-primary)]"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => { setTab("register"); setError(""); }}
-            className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
-              tab === "register"
-                ? "bg-white dark:bg-[var(--bg-primary)] shadow text-[var(--text-primary)]"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-            }`}
-          >
-            Register
-          </button>
+        <div className="flex mb-4 glass-card rounded-xl p-1">
+          {(["login", "register"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => { setTab(t); setError(""); }}
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+                tab === t
+                  ? "bg-[var(--accent)] text-white shadow"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              }`}
+            >
+              {t === "login" ? "Sign In" : "Register"}
+            </button>
+          ))}
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white dark:bg-[var(--bg-secondary)] rounded-2xl shadow-sm border border-[var(--border)] p-6 space-y-4"
+          className="glass-card rounded-2xl p-6 space-y-4"
         >
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -104,7 +106,7 @@ function LoginForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Jane Wolf"
-                className="w-full px-3.5 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-[var(--bg-primary)] text-[var(--text-primary)] focus:ring-2 focus:ring-sbu-red/20 focus:border-sbu-red outline-none"
+                className="w-full px-3.5 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white/70 dark:bg-water-abyss/70 text-[var(--text-primary)] focus:outline-none focus:water-ring transition-shadow"
                 required
               />
             </div>
@@ -120,7 +122,7 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={`netid@${SBU_DOMAIN}`}
-              className={`w-full px-3.5 py-2.5 border rounded-xl text-sm bg-[var(--bg-primary)] text-[var(--text-primary)] focus:ring-2 focus:ring-sbu-red/20 focus:border-sbu-red outline-none ${
+              className={`w-full px-3.5 py-2.5 border rounded-xl text-sm bg-white/70 dark:bg-water-abyss/70 text-[var(--text-primary)] focus:outline-none focus:water-ring transition-shadow ${
                 emailError ? "border-red-400" : "border-[var(--border)]"
               }`}
               required
@@ -137,7 +139,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={tab === "register" ? "Minimum 8 characters" : ""}
-              className="w-full px-3.5 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-[var(--bg-primary)] text-[var(--text-primary)] focus:ring-2 focus:ring-sbu-red/20 focus:border-sbu-red outline-none"
+              className="w-full px-3.5 py-2.5 border border-[var(--border)] rounded-xl text-sm bg-white/70 dark:bg-water-abyss/70 text-[var(--text-primary)] focus:outline-none focus:water-ring transition-shadow"
               minLength={tab === "register" ? 8 : undefined}
               required
             />
@@ -146,7 +148,7 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading || !!emailError}
-            className="w-full py-2.5 bg-sbu-red text-white rounded-xl font-semibold text-sm hover:bg-sbu-red-dark disabled:opacity-50 transition-colors"
+            className="btn-water w-full py-2.5 text-white rounded-xl font-semibold text-sm disabled:opacity-50"
           >
             {loading
               ? tab === "login" ? "Signing in..." : "Creating account..."
