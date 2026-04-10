@@ -1,12 +1,15 @@
 """Load real SBU crawled data from documents_chunked.json into the database.
 
 Generates embeddings using fastembed (local, no API key needed).
-Run: python -m seed.load_real_data
+
+Usage:
+    python -m seed.load_real_data           # skip if already loaded
+    python -m seed.load_real_data --reload  # clear and reload fresh
 """
 import asyncio
 import hashlib
 import json
-import os
+import sys
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -18,6 +21,25 @@ from app.models.models import Source, Document, Chunk, SourceCategory, DocumentS
 
 DATA_FILE = Path(__file__).parent.parent / "data" / "documents_chunked.json"
 BATCH_SIZE = 64  # chunks to embed at once
+
+
+def category_names_map() -> dict[str, str]:
+    return {
+        "academic_calendar":  "Academic Calendar",
+        "academics":          "Academic Programs",
+        "admissions":         "Admissions",
+        "building_hours":     "Building Hours",
+        "clubs":              "Student Clubs & Organizations",
+        "dining":             "Dining Services",
+        "faq":                "SBU FAQ",
+        "housing":            "Campus Housing",
+        "it_help":            "IT Help & Services",
+        "library":            "University Libraries",
+        "parking":            "Parking & Transportation",
+        "registrar":          "Registrar",
+        "student_affairs":    "Student Affairs",
+        "tuition_financial_aid": "Tuition & Financial Aid",
+    }
 
 
 def get_embedding_model():
@@ -39,7 +61,7 @@ def safe_category(cat: str) -> SourceCategory:
         return SourceCategory.GENERAL
 
 
-async def load(db: AsyncSession):
+async def load(db: AsyncSession, reload: bool = False):
     print(f"Loading data from {DATA_FILE}...")
     with open(DATA_FILE, encoding="utf-8") as f:
         chunks_data = json.load(f)
@@ -48,47 +70,58 @@ async def load(db: AsyncSession):
 
     # Check if already loaded
     result = await db.execute(
-        select(Source).where(Source.name == "SBU Crawled Dataset")
+        select(Source).where(Source.name == "Academic Calendar")
     )
-    if result.scalar_one_or_none():
-        print("Real data already loaded. Skipping.")
+    existing = result.scalar_one_or_none()
+
+    if existing and not reload:
+        print("Real data already loaded. Skipping. (use --reload to force reload)")
         return
+
+    if existing and reload:
+        print("Reload requested — clearing existing crawled data...")
+        names = list(category_names_map().values())
+        result2 = await db.execute(select(Source).where(Source.name.in_(names)))
+        for src in result2.scalars().all():
+            # Delete documents and chunks belonging to this source first
+            docs_result = await db.execute(select(Document).where(Document.source_id == src.id))
+            for doc in docs_result.scalars().all():
+                await db.delete(doc)
+            await db.delete(src)
+        await db.flush()
+        print("  Cleared old sources/documents/chunks.")
 
     # Load embedding model
     model = get_embedding_model()
 
-    # Group chunks by category → source, and by URL → document
+    # Create one Source per category
+    cat_map = category_names_map()
     sources: dict[str, Source] = {}
     documents: dict[str, Document] = {}
 
-    # Create one Source per category
-    category_names = {
-        "academic_calendar": "Academic Calendar",
-        "building_hours": "Building Hours",
-        "clubs": "Student Clubs & Organizations",
-        "dining": "Dining Services",
-        "faq": "SBU FAQ",
-        "housing": "Campus Housing",
-        "it_help": "IT Help & Services",
-        "library": "University Libraries",
-        "parking": "Parking & Transportation",
-        "tuition_financial_aid": "Tuition & Financial Aid",
-    }
-
-    for cat, display_name in category_names.items():
-        src = Source(
-            name=display_name,
-            url=f"https://www.stonybrook.edu/{cat}/",
-            category=safe_category(cat),
-            office=cat,
-            authority_score=1.0,
-            is_active=True,
-        )
-        db.add(src)
-        sources[cat] = src
+    for cat, display_name in cat_map.items():
+        # Use a unique placeholder URL that won't clash with seed data
+        placeholder_url = f"https://www.stonybrook.edu/_crawled/{cat}/"
+        # Check if a source with this name already exists (e.g. from a partial run)
+        existing_src = (await db.execute(
+            select(Source).where(Source.name == display_name)
+        )).scalar_one_or_none()
+        if existing_src:
+            sources[cat] = existing_src
+        else:
+            src = Source(
+                name=display_name,
+                url=placeholder_url,
+                category=safe_category(cat),
+                office=cat,
+                authority_score=1.0,
+                is_active=True,
+            )
+            db.add(src)
+            sources[cat] = src
 
     await db.flush()
-    print(f"  Created {len(sources)} sources")
+    print(f"  Created/reused {len(sources)} sources")
 
     # Create Documents (one per unique URL)
     for item in chunks_data:
@@ -96,7 +129,8 @@ async def load(db: AsyncSession):
         if url in documents:
             continue
         cat = item["category"]
-        src = sources.get(cat, sources.get("faq"))
+        # Fall back to faq source if category isn't in our map
+        src = sources.get(cat) or sources.get("faq") or list(sources.values())[0]
         content_hash = hashlib.sha256(url.encode()).hexdigest()
         doc = Document(
             source_id=src.id,
@@ -114,14 +148,12 @@ async def load(db: AsyncSession):
     print(f"  Created {len(documents)} documents")
 
     # Create Chunks with embeddings in batches
-    all_items = chunks_data
-    total = len(all_items)
+    total = len(chunks_data)
     created = 0
 
     for batch_start in range(0, total, BATCH_SIZE):
-        batch = all_items[batch_start: batch_start + BATCH_SIZE]
+        batch = chunks_data[batch_start: batch_start + BATCH_SIZE]
         texts = [item["text"] for item in batch]
-
         embeddings = embed_batch(model, texts)
 
         for item, embedding in zip(batch, embeddings):
@@ -146,8 +178,9 @@ async def load(db: AsyncSession):
 
 
 async def main():
+    reload = "--reload" in sys.argv
     async with async_session() as db:
-        await load(db)
+        await load(db, reload=reload)
 
 
 if __name__ == "__main__":
