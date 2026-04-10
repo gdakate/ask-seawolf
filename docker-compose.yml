@@ -1,0 +1,92 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: sbu_user
+      POSTGRES_PASSWORD: sbu_pass
+      POSTGRES_DB: sbu_assistant
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sbu_user -d sbu_assistant"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    command: bash /app/entrypoint.sh
+    environment:
+      DATABASE_URL: postgresql+asyncpg://sbu_user:sbu_pass@postgres:5432/sbu_assistant
+      DATABASE_URL_SYNC: postgresql://sbu_user:sbu_pass@postgres:5432/sbu_assistant
+      REDIS_URL: redis://redis:6379/0
+      AI_PROVIDER: mock
+      STORAGE_BACKEND: local
+      LOCAL_STORAGE_PATH: /data/storage
+      JWT_SECRET: local-dev-secret-change-in-production
+      ADMIN_DEFAULT_EMAIL: admin@stonybrook.edu
+      ADMIN_DEFAULT_PASSWORD: admin123
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+      ENVIRONMENT: development
+      LOG_LEVEL: DEBUG
+      POSTGRES_USER: sbu_user
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/api:/app
+      - api_storage:/data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+
+  admin:
+    build:
+      context: ./apps/admin
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./apps/admin:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  api_storage:

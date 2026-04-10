@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sbu-red: #990000;
+  --sbu-red-dark: #7a0000;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-chat: #f1f3f5;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #868e96;
+  --border: #dee2e6;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.dark {
+  --bg-primary: #1a1b1e;
+  --bg-secondary: #25262b;
+  --bg-chat: #2c2e33;
+  --text-primary: #e9ecef;
+  --text-secondary: #adb5bd;
+  --text-muted: #868e96;
+  --border: #373a40;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+}
