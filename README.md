@@ -1,4 +1,4 @@
-# Seawolf Ask — Stony Brook University AI Assistant Platform
+# Ask Seawolves — Stony Brook University AI Assistant Platform
 
 A production-ready, RAG-powered Q&A platform for Stony Brook University public information. Students, applicants, and visitors can ask questions and receive cited answers grounded in official university sources.
 
@@ -26,26 +26,61 @@ A production-ready, RAG-powered Q&A platform for Stony Brook University public i
 ## Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose
-- (Optional) Node.js 20+ and Python 3.12+ for local development without Docker
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- (Optional for AI answers) [Ollama](https://ollama.com)
 
 ### Run with Docker
 
 ```bash
-# Clone and setup
+# 1. Clone the repo
+git clone https://github.com/gdakate/ask-seawolf.git
+cd ask-seawolf
+
+# 2. Copy environment config
 cp .env.example .env
 
-# Start all services
+# 3. Start all services (builds images, runs migrations, seeds demo data)
 docker compose up -d --build
-
-# The platform starts with:
-#   - Public web app:  http://localhost:3000
-#   - Admin dashboard: http://localhost:3001
-#   - API + docs:      http://localhost:8000/docs
-#   - PostgreSQL:      localhost:5432
 ```
 
-The API automatically runs migrations and seeds demo data on first boot.
+Once running:
+- Public web app:  http://localhost:3000
+- Admin dashboard: http://localhost:3001
+- API docs:        http://localhost:8000/docs
+
+### Load Real SBU Data (required for useful answers)
+
+The crawled dataset is not stored in git (it's ~25MB). Generate it:
+
+```bash
+# Step 1 — Crawl the SBU website (~20 min, fetches up to 5000 pages)
+docker compose exec api python /app/data/crawl_sbu.py
+
+# Step 2 — Embed and load into the database (~20 min, CPU-only)
+docker compose exec api python -m seed.load_real_data --reload
+```
+
+To recrawl and refresh the data any time, just run both commands again.
+
+### Enable AI Answer Generation (optional)
+
+Without this, the app returns raw retrieved text. With it, answers are synthesized by an LLM.
+
+**Option A — Local (free, private, no API key)**
+```bash
+brew install ollama        # macOS
+ollama serve               # start the server
+ollama pull llama3.2       # download model (~2GB, one time)
+```
+Set in `.env`: `AI_PROVIDER=local`
+
+**Option B — OpenAI**
+Set in `.env`:
+```
+AI_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+```
+Then restart: `docker compose up -d api`
 
 ### Default Admin Login
 - Email: `admin@stonybrook.edu`
@@ -88,11 +123,12 @@ See `.env.example` for the full list.
 
 ## AI Provider Configuration
 
-The platform supports three AI provider modes:
+The platform supports four AI provider modes:
 
-- **Mock** (default): Deterministic embeddings and template responses. No external API required. Ideal for development.
-- **OpenAI**: Set `AI_PROVIDER=openai` and `OPENAI_API_KEY`. Uses GPT-4o for generation and text-embedding-3-small for embeddings.
-- **AWS Bedrock**: Set `AI_PROVIDER=bedrock` with AWS credentials. Uses Claude for generation and Titan for embeddings.
+- **Mock** (default): Returns raw retrieved text. No external service needed. Good for testing retrieval.
+- **Local**: Ollama (LLM) + fastembed (embeddings). Fully offline, no API key. Set `AI_PROVIDER=local`.
+- **OpenAI**: Set `AI_PROVIDER=openai` and `OPENAI_API_KEY`. Uses GPT-4o + text-embedding-3-small.
+- **AWS Bedrock**: Set `AI_PROVIDER=bedrock` with AWS credentials. Uses Claude + Titan embeddings.
 
 ## Key Features
 

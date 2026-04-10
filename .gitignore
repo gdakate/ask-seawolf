@@ -37,3 +37,6 @@ Thumbs.db
 
 # Storage
 /data/
+.claude/
+
+# Large crawl data files are tracked via Git LFS (see .gitattributes)

@@ -1,4 +1,4 @@
-"""Seawolf Ask - FastAPI Application."""
+"""Ask Seawolves - FastAPI Application."""
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,13 +14,13 @@ logger = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Seawolf Ask API", environment=settings.environment)
+    logger.info("Starting Ask Seawolves API", environment=settings.environment)
     yield
-    logger.info("Shutting down Seawolf Ask API")
+    logger.info("Shutting down Ask Seawolves API")
 
 
 app = FastAPI(
-    title="Seawolf Ask API",
+    title="Ask Seawolves API",
     description="RAG-powered Q&A platform for Stony Brook University public information",
     version="1.0.0",
     lifespan=lifespan,
@@ -43,4 +43,4 @@ app.include_router(admin_router, prefix="/api", tags=["Admin"])
 
 @app.get("/")
 async def root():
-    return {"name": "Seawolf Ask API", "version": "1.0.0", "docs": "/docs"}
+    return {"name": "Ask Seawolves API", "version": "1.0.0", "docs": "/docs"}

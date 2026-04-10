@@ -1,0 +1,2 @@
+apps/api/data/documents_chunked.json filter=lfs diff=lfs merge=lfs -text
+apps/api/data/documents_raw.json filter=lfs diff=lfs merge=lfs -text

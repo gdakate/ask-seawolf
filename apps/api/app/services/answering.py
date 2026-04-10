@@ -15,7 +15,7 @@ RELIABLE_SOURCE_THRESHOLD = 0.3
 
 # ─── System prompt ────────────────────────────────────────────────────
 
-SYSTEM_PROMPT = """You are Seawolf Ask, the official AI assistant for Stony Brook University (SBU).
+SYSTEM_PROMPT = """You are Ask Seawolves, the official AI assistant for Stony Brook University (SBU).
 
 CORE RULES:
 1. Answer ONLY from the [CONTEXT] block provided. Never use outside knowledge.

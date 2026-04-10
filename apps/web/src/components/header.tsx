@@ -32,7 +32,7 @@ export function Header() {
             </div>
             <div className="leading-tight">
               <div className="font-display font-semibold text-[var(--text-primary)] text-base tracking-tight">
-                Seawolf Ask
+                Ask Seawolves
               </div>
               <div className="text-[10px] text-[var(--text-muted)] font-medium tracking-widest uppercase">
                 Stony Brook University

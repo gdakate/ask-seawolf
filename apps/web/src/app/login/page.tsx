@@ -63,7 +63,7 @@ function LoginForm() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-sbu-red text-white font-bold text-xl mb-4 shadow-lg">
             SW
           </div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Seawolf Ask</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">Ask Seawolves</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
             Sign in with your SBU account
           </p>

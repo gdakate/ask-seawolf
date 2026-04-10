@@ -190,6 +190,62 @@ class OpenAILLMProvider(LLMProvider):
         return response.choices[0].message.content or ""
 
 
+# ─── Local Providers (fastembed + Ollama) ────────────────────────────
+
+class LocalEmbeddingProvider(EmbeddingProvider):
+    """Local embeddings via fastembed — no API key required."""
+
+    def __init__(self):
+        from fastembed import TextEmbedding
+        self.model = TextEmbedding(settings.local_embedding_model)
+
+    def _embed_sync(self, texts: list[str]) -> list[list[float]]:
+        return [emb.tolist() for emb in self.model.embed(texts)]
+
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        import asyncio
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._embed_sync, texts)
+
+    async def embed_query(self, text: str) -> list[float]:
+        result = await self.embed([text])
+        return result[0]
+
+
+class OllamaLLMProvider(LLMProvider):
+    """Local LLM via Ollama — no API key required."""
+
+    def __init__(self):
+        import httpx
+        self.client = httpx.AsyncClient(base_url=settings.ollama_base_url, timeout=120.0)
+        self.model = settings.ollama_model
+
+    async def generate(self, prompt: str, system: str = "", max_tokens: int = 1024) -> str:
+        import httpx
+        messages = []
+        if system:
+            messages.append({"role": "system", "content": system})
+        messages.append({"role": "user", "content": prompt})
+
+        try:
+            response = await self.client.post(
+                "/api/chat",
+                json={"model": self.model, "messages": messages, "stream": False,
+                      "options": {"num_predict": max_tokens, "temperature": 0.1}},
+            )
+            response.raise_for_status()
+            return response.json()["message"]["content"]
+        except httpx.ConnectError:
+            return (
+                "Ollama is not running. Please install and start Ollama:\n"
+                "  brew install ollama\n"
+                "  ollama serve\n"
+                f"  ollama pull {self.model}"
+            )
+        except Exception as e:
+            return f"Ollama error: {str(e)}"
+
+
 # ─── Bedrock Provider (stub, ready for integration) ─────────────────
 
 class BedrockEmbeddingProvider(EmbeddingProvider):
@@ -241,7 +297,9 @@ class BedrockLLMProvider(LLMProvider):
 # ─── Factory ─────────────────────────────────────────────────────────
 
 def get_embedding_provider() -> EmbeddingProvider:
-    if settings.ai_provider == "openai":
+    if settings.ai_provider == "local":
+        return LocalEmbeddingProvider()
+    elif settings.ai_provider == "openai":
         return OpenAIEmbeddingProvider()
     elif settings.ai_provider == "bedrock":
         return BedrockEmbeddingProvider()
@@ -249,7 +307,9 @@ def get_embedding_provider() -> EmbeddingProvider:
 
 
 def get_llm_provider() -> LLMProvider:
-    if settings.ai_provider == "openai":
+    if settings.ai_provider == "local":
+        return OllamaLLMProvider()
+    elif settings.ai_provider == "openai":
         return OpenAILLMProvider()
     elif settings.ai_provider == "bedrock":
         return BedrockLLMProvider()

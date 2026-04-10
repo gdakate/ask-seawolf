@@ -5,7 +5,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-  title: "Seawolf Ask",
+  title: "Ask Seawolves",
   description:
     "Get answers about Stony Brook University admissions, tuition, housing, financial aid, and more — powered by official university sources.",
 };

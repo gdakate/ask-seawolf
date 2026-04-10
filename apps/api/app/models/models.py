@@ -32,6 +32,15 @@ class SourceCategory(str, enum.Enum):
     STUDENT_AFFAIRS = "student_affairs"
     IT_SERVICES = "it_services"
     GENERAL = "general"
+    # From real crawled dataset
+    ACADEMIC_CALENDAR = "academic_calendar"
+    BUILDING_HOURS = "building_hours"
+    CLUBS = "clubs"
+    FAQ = "faq"
+    IT_HELP = "it_help"
+    LIBRARY = "library"
+    PARKING = "parking"
+    TUITION_FINANCIAL_AID = "tuition_financial_aid"
 
 
 class DocumentStatus(str, enum.Enum):

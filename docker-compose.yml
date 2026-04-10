@@ -36,7 +36,10 @@ services:
       DATABASE_URL: postgresql+asyncpg://sbu_user:sbu_pass@postgres:5432/sbu_assistant
       DATABASE_URL_SYNC: postgresql://sbu_user:sbu_pass@postgres:5432/sbu_assistant
       REDIS_URL: redis://redis:6379/0
-      AI_PROVIDER: mock
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      LOCAL_EMBEDDING_MODEL: ${LOCAL_EMBEDDING_MODEL:-BAAI/bge-small-en-v1.5}
       STORAGE_BACKEND: local
       LOCAL_STORAGE_PATH: /data/storage
       JWT_SECRET: local-dev-secret-change-in-production
