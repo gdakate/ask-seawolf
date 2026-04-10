@@ -39,6 +39,4 @@ Thumbs.db
 /data/
 .claude/
 
-# Large crawl data files (regenerate with: docker compose exec api python /app/data/crawl_sbu.py)
-apps/api/data/documents_raw.json
-apps/api/data/documents_chunked.json
+# Large crawl data files are tracked via Git LFS (see .gitattributes)
