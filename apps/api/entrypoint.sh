@@ -14,5 +14,10 @@ alembic upgrade head
 echo "Seeding database..."
 python -m seed.seed_data || true
 
+if [ "${AI_PROVIDER}" = "local" ]; then
+    echo "Loading real SBU dataset with local embeddings..."
+    python -m seed.load_real_data || true
+fi
+
 echo "Starting API server..."
 exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload

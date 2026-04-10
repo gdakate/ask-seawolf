@@ -19,13 +19,18 @@ class Settings(BaseSettings):
     admin_default_password: str = "admin123"
 
     # AI Provider
-    ai_provider: str = "mock"  # mock, openai, bedrock
+    ai_provider: str = "mock"  # mock, local, openai, bedrock
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
     openai_embedding_model: str = "text-embedding-3-small"
     aws_region: str = "us-east-1"
     bedrock_model_id: str = "anthropic.claude-3-sonnet-20240229-v1:0"
     bedrock_embedding_model_id: str = "amazon.titan-embed-text-v2:0"
+
+    # Local AI — no API key required (Ollama LLM + fastembed embeddings)
+    ollama_base_url: str = "http://host.docker.internal:11434"
+    ollama_model: str = "llama3.2"
+    local_embedding_model: str = "BAAI/bge-small-en-v1.5"
 
     # Storage
     storage_backend: str = "local"  # local, s3

@@ -1,4 +1,4 @@
-.PHONY: help up down build logs api-logs web-logs admin-logs seed migrate test lint clean
+.PHONY: help up down build logs api-logs web-logs admin-logs seed load-data migrate test lint clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -26,6 +26,9 @@ admin-logs: ## Follow admin logs
 
 seed: ## Re-run seed data
 	docker compose exec api python -m seed.seed_data
+
+load-data: ## Load real SBU dataset with local embeddings (requires AI_PROVIDER=local)
+	docker compose exec api python -m seed.load_real_data
 
 migrate: ## Run database migrations
 	docker compose exec api alembic upgrade head
