@@ -9,6 +9,15 @@ import json
 import re
 import sys
 
+# ── URL-based category remap (applied before whitelist check) ─────────────────
+# Fixes misclassification when pages are discovered from a different seed category.
+URL_CATEGORY_REMAP = [
+    ("/commcms/mealplan/",       "dining"),
+    ("/commcms/dining/",         "dining"),
+    ("/mobility-and-parking/",   "parking"),
+    ("/transportation/",         "parking"),
+]
+
 # ── Per-category nav-end anchors ──────────────────────────────────────────────
 # Everything up to and including the anchor is removed as nav prefix.
 # Anchors are tried in order; first match wins.
@@ -33,6 +42,8 @@ PREFIX_CUT_ANCHORS = {
         "View All Libraries & Hours Branch Library",
         # guides.library subdomain
         "Stony Brook University Libraries Research & Subject Guides",
+        # answers.library subdomain — FAQ knowledge base
+        "Toggle menu visibility",
         # commons / exhibits subdomains
         "Stony Brook University Libraries",
     ],
@@ -58,13 +69,22 @@ PREFIX_CUT_ANCHORS = {
         "View all experts Close",
     ],
     "dining": [
-        "Contact Us",
+        # mealplan pages nav end
+        "Report Lost/Stolen Nutrislice Dining →",
+        "Nutrislice Dining →",
+        # dining pages nav end
+        "Feedback Dining Guide",
+        "Catering Feedback Dining Guide",
     ],
     "it_help": [
-        "Contact Us",
+        # it.stonybrook.edu nav end (note: "TIcket" typo is in the actual page)
+        "Submit a TIcket System Status Close",
+        "Submit a Ticket System Status Close",
     ],
     "parking": [
-        "Contact Us",
+        # parking nav repeats twice; second block ends with this
+        "Citations FAQs East Campus Contact",
+        "Parking Map Citations FAQs",
     ],
 }
 
@@ -181,6 +201,12 @@ def clean_file(input_path: str, output_path: str):
         category = item.get("category", "")
         title    = item.get("title", "")
         text     = item.get("text", "")
+
+        # URL-based category remap (fix misclassification from seed crawl)
+        for pattern, new_cat in URL_CATEGORY_REMAP:
+            if pattern in url:
+                category = new_cat
+                break
 
         if not is_relevant_url(url, category):
             skipped += 1
