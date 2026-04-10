@@ -1,0 +1,162 @@
+{
+  "version": "1.0",
+  "description": "Intent routing rules for Seawolf Ask alignment layer. Rules are evaluated top-down; first match wins.",
+  "intents": [
+    {
+      "intent": "greeting",
+      "description": "Social openers, expressions of gratitude, farewells, small talk with no university question.",
+      "retrieval_gated": false,
+      "action": "respond_with_welcome",
+      "keyword_patterns": [
+        "^hi$", "^hello$", "^hey$", "^hi there$", "^hello there$",
+        "^thanks$", "^thank you$", "^thx$", "^ty$",
+        "^bye$", "^goodbye$", "^see you$",
+        "^ok$", "^okay$", "^got it$", "^sounds good$",
+        "^what can you do", "^what do you do", "^who are you",
+        "^how are you", "^nice to meet"
+      ],
+      "examples": [
+        "hi",
+        "hello",
+        "thanks!",
+        "what can you help me with?",
+        "who are you?",
+        "ok great"
+      ]
+    },
+    {
+      "intent": "private_account_specific",
+      "description": "Requests for information tied to a specific student's personal account, records, or status. Never retrieve — always refuse and redirect.",
+      "retrieval_gated": false,
+      "action": "refuse_and_redirect",
+      "office_hint": null,
+      "refusal_message": "I don't have access to personal student account information — that's outside my current scope. Please visit the relevant portal or contact the appropriate office directly.",
+      "keyword_patterns": [
+        "my grade", "my gpa", "my transcript",
+        "my schedule", "my classes", "my courses", "my enrollment",
+        "my tuition", "my bill", "my balance", "my payment",
+        "my financial aid", "my aid", "my award", "my fafsa",
+        "my housing", "my room", "my roommate", "my assignment",
+        "my netid", "my password", "my account", "my login",
+        "my degree audit", "my graduation", "my holds",
+        "am i registered", "did i get in", "my application status",
+        "my refund"
+      ],
+      "portal_redirects": {
+        "grades_enrollment": "SOLAR — solar.stonybrook.edu",
+        "financial_aid": "SOLAR — solar.stonybrook.edu / Student Financial Services",
+        "housing": "Residential Programs — housing.stonybrook.edu",
+        "it_account": "IT Help Desk — it.stonybrook.edu",
+        "degree_audit": "DegreeWorks via SOLAR"
+      },
+      "examples": [
+        "what are my grades?",
+        "when does my financial aid post?",
+        "am I registered for spring?",
+        "what room am I in?",
+        "I can't log into my NetID"
+      ]
+    },
+    {
+      "intent": "human_support_needed",
+      "description": "Escalation requests, urgent issues, complaints, or topics where a human or specific office is clearly needed.",
+      "retrieval_gated": false,
+      "action": "route_to_office",
+      "keyword_patterns": [
+        "i need to talk to someone", "i need to speak with",
+        "this is urgent", "emergency", "i have a complaint",
+        "i want to report", "i need help immediately",
+        "can i speak to a person", "connect me to",
+        "i'm having a crisis", "mental health", "i feel unsafe"
+      ],
+      "escalation_offices": {
+        "general": "Dean of Students Office — stonybrook.edu/dos",
+        "mental_health": "Counseling and Psychological Services (CAPS) — stonybrook.edu/caps",
+        "emergency": "University Police — (631) 632-3333"
+      },
+      "examples": [
+        "I need to talk to someone right now",
+        "this is urgent, I have a problem",
+        "I want to file a complaint"
+      ]
+    },
+    {
+      "intent": "ambiguous_public",
+      "description": "Appears to be a public info question but is too vague to answer accurately. Trigger a clarification question before retrieving.",
+      "retrieval_gated": false,
+      "action": "ask_clarification",
+      "ambiguity_patterns": [
+        {
+          "pattern": "registration",
+          "clarification": "Are you asking about course registration for a specific term (e.g., Fall 2026), or about the process for registering as a new student?"
+        },
+        {
+          "pattern": "fees",
+          "clarification": "Are you asking about tuition fees, housing fees, dining fees, or another specific charge?"
+        },
+        {
+          "pattern": "apply|application",
+          "clarification": "Are you asking about undergraduate admissions, graduate admissions, or a specific program application?"
+        },
+        {
+          "pattern": "^(the )?program$|about the program|your program",
+          "clarification": "Which program are you interested in — a specific undergraduate major, graduate program, or professional certificate?"
+        },
+        {
+          "pattern": "housing",
+          "clarification": "Are you asking about on-campus housing options, the application process, costs, or something else?"
+        },
+        {
+          "pattern": "financial aid",
+          "clarification": "Are you asking about the types of financial aid available, eligibility requirements, deadlines, or the application process?"
+        },
+        {
+          "pattern": "schedule|calendar",
+          "clarification": "Are you asking about the academic calendar (add/drop dates, holidays, finals), or a specific class schedule?"
+        }
+      ],
+      "examples": [
+        "tell me about registration",
+        "what are the fees?",
+        "how do I apply?",
+        "I need information about housing",
+        "what about financial aid?"
+      ]
+    },
+    {
+      "intent": "public_school_info",
+      "description": "Questions about publicly available SBU information. Run retrieval and answer from context with citations.",
+      "retrieval_gated": true,
+      "action": "retrieve_and_answer",
+      "confidence_thresholds": {
+        "high": 0.7,
+        "medium": 0.3,
+        "low": 0.0
+      },
+      "confidence_behavior": {
+        "high": "Answer confidently with citations.",
+        "medium": "Answer with caveat: 'Based on available information...' and suggest contacting the office.",
+        "low": "Do not answer from context — redirect to stonybrook.edu or the relevant office."
+      },
+      "office_routing_map": {
+        "registrar": ["transcript", "enrollment verification", "academic records", "add drop", "withdrawal", "academic calendar", "final exam"],
+        "bursar": ["tuition", "billing", "payment plan", "refund", "charges", "student account balance"],
+        "financial_aid": ["fafsa", "scholarship", "grant", "loan", "work study", "aid package", "sat", "tap", "financial aid"],
+        "housing": ["dorm", "residence hall", "housing application", "on campus living", "residential"],
+        "dining": ["meal plan", "dining hall", "food", "dining location", "campus dining"],
+        "it_help": ["netid", "wifi", "vpn", "software", "google workspace", "canvas", "brightspace", "it service"],
+        "parking": ["parking permit", "parking ticket", "citation", "commuter", "bus", "shuttle"],
+        "academic_calendar": ["deadline", "last day", "spring break", "fall semester", "spring semester", "commencement", "graduation date"],
+        "clubs": ["club", "organization", "sac", "student activities", "campus connect"]
+      },
+      "examples": [
+        "What is the tuition for in-state undergrad students?",
+        "When does spring 2026 registration open?",
+        "What dining plans are available for freshmen?",
+        "How do I get a parking permit?",
+        "What are the housing options for graduate students?",
+        "What is the last day to withdraw from a course?"
+      ]
+    }
+  ]
+}

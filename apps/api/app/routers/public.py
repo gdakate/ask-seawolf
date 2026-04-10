@@ -22,6 +22,7 @@ from app.services.retrieval import (
     generate_follow_ups, check_faq_match,
 )
 from app.services.answering import generate_answer, should_warn_term_dependent
+from app.services.classifier import classify_query
 
 router = APIRouter()
 
@@ -63,7 +64,7 @@ async def health_check():
 
 @router.post("/chat/query", response_model=ChatQueryResponse)
 async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
-    """Main chat endpoint: retrieve context, generate answer, return with citations."""
+    """Main chat endpoint with alignment layer: classify intent before retrieval."""
     import time
     start = time.time()
 
@@ -77,10 +78,44 @@ async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
         db.add(session)
         await db.flush()
 
-    # Check FAQ match first
+    # ── Step 1: Classify intent (hybrid rule + LLM) ───────────────────
+    classification = await classify_query(req.query)
+    intent = classification.intent
+
+    # Intents that bypass retrieval entirely
+    NO_RETRIEVAL_INTENTS = {
+        "greeting", "private_account_specific", "human_support_needed",
+        "ambiguous_public", "out_of_scope_non_sbu", "no_meaningful_query",
+    }
+    if intent in NO_RETRIEVAL_INTENTS:
+        # For ambiguous: use the LLM-generated clarification question directly
+        if intent == "ambiguous_public" and classification.clarification_question:
+            answer = classification.clarification_question
+            confidence = classification.confidence
+        else:
+            answer, confidence = await generate_answer(req.query, [], intent=intent)
+
+        user_msg = ChatMessage(session_id=session.id, role="user", content=req.query)
+        db.add(user_msg)
+        asst_msg = ChatMessage(
+            session_id=session.id, role="assistant", content=answer,
+            confidence_score=confidence,
+            citations=None, office_routing=None, follow_up_questions=None,
+        )
+        db.add(asst_msg)
+        session.last_active_at = datetime.now(timezone.utc)
+
+        return ChatQueryResponse(
+            answer=answer,
+            citations=[],
+            confidence_score=confidence,
+            session_id=session_id,
+            follow_up_questions=[],
+        )
+
+    # ── Step 2: FAQ fast-path (public_school_info only) ───────────────
     faq = await check_faq_match(db, req.query)
     if faq:
-        # FAQ response with supporting citations from retrieval
         chunks = await retrieve_chunks(db, req.query, top_k=3)
         citations = build_citations(chunks)
         follow_ups = generate_follow_ups(req.query, chunks)
@@ -106,7 +141,7 @@ async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
             follow_up_questions=follow_ups,
         )
 
-    # RAG pipeline
+    # ── Step 3: RAG pipeline (public_school_info) ─────────────────────
     chunks = await retrieve_chunks(db, req.query, top_k=5)
     citations = build_citations(chunks)
     answer, confidence = await generate_answer(req.query, chunks)
