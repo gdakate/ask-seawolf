@@ -78,8 +78,19 @@ async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
         db.add(session)
         await db.flush()
 
+    # ── Fetch conversation history (last 6 messages, chronological) ───
+    history_stmt = (
+        select(ChatMessage)
+        .where(ChatMessage.session_id == session.id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(6)
+    )
+    history_result = await db.execute(history_stmt)
+    history_rows = list(reversed(history_result.scalars().all()))
+    history = [{"role": row.role, "content": row.content} for row in history_rows]
+
     # ── Step 1: Classify intent (hybrid rule + LLM) ───────────────────
-    classification = await classify_query(req.query)
+    classification = await classify_query(req.query, history=history)
     intent = classification.intent
 
     # Intents that bypass retrieval entirely
@@ -93,7 +104,7 @@ async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
             answer = classification.clarification_question
             confidence = classification.confidence
         else:
-            answer, confidence = await generate_answer(req.query, [], intent=intent)
+            answer, confidence = await generate_answer(req.query, [], intent=intent, history=history)
 
         user_msg = ChatMessage(session_id=session.id, role="user", content=req.query)
         db.add(user_msg)
@@ -144,7 +155,7 @@ async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
     # ── Step 3: RAG pipeline (public_school_info) ─────────────────────
     chunks = await retrieve_chunks(db, req.query, top_k=10)
     citations = build_citations(chunks)
-    answer, confidence = await generate_answer(req.query, chunks)
+    answer, confidence = await generate_answer(req.query, chunks, history=history)
     office = await find_office_routing(db, req.query, chunks)
     follow_ups = generate_follow_ups(req.query, chunks)
     warning = should_warn_term_dependent(chunks, req.query)
@@ -193,15 +204,15 @@ async def get_topics():
         TopicOut(key="faculty",                  name="Faculty Directory",        description="Professors, researchers, and department contacts across all SBU departments", icon="Users"),
         TopicOut(key="dept_computer_science",    name="Computer Science",         description="CS faculty, research, and graduate programs", icon="Code"),
         TopicOut(key="dept_mathematics",         name="Mathematics",              description="Math faculty, courses, and research", icon="Calculator"),
-        TopicOut(key="dept_applied_math_stats",  name="Applied Math & Statistics","AMS faculty, programs, and research", icon="BarChart"),
+        TopicOut(key="dept_applied_math_stats",  name="Applied Math & Statistics", description="AMS faculty, programs, and research", icon="BarChart"),
         TopicOut(key="dept_physics_astronomy",   name="Physics & Astronomy",      description="Physics faculty and research areas", icon="Star"),
         TopicOut(key="dept_chemistry",           name="Chemistry",                description="Chemistry faculty and research", icon="Flask"),
         TopicOut(key="dept_biology",             name="Biology",                  description="Biology faculty and life sciences research", icon="Leaf"),
         TopicOut(key="dept_economics",           name="Economics",                description="Economics faculty and research", icon="TrendingUp"),
         TopicOut(key="dept_business",            name="Business",                 description="College of Business faculty and programs", icon="Briefcase"),
         TopicOut(key="dept_electrical_computer_engineering", name="Electrical & Computer Engineering", description="ECE faculty and research", icon="Zap"),
-        TopicOut(key="dept_mechanical_engineering", name="Mechanical Engineering","ME faculty and research", icon="Settings"),
-        TopicOut(key="dept_biomedical_engineering", name="Biomedical Engineering","BME faculty and research", icon="Activity"),
+        TopicOut(key="dept_mechanical_engineering", name="Mechanical Engineering", description="ME faculty and research", icon="Settings"),
+        TopicOut(key="dept_biomedical_engineering", name="Biomedical Engineering", description="BME faculty and research", icon="Activity"),
         # ── Campus life ───────────────────────────────────────────────────
         TopicOut(key="housing",                  name="Housing",                  description="Campus residences, applications, and room assignments", icon="Home"),
         TopicOut(key="dining",                   name="Dining",                   description="Meal plans, dining locations, and hours", icon="UtensilsCrossed"),
