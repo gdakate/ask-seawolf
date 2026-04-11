@@ -22,14 +22,29 @@ RAG-powered Q&A chatbot grounded in official SBU data.
 - Conversation history, topic browsing, keyword search
 
 ### Admin Dashboard (`:3001`)
-Content management and monitoring for platform operators.
-- Source management — add/edit/toggle the URLs the AI learns from, set authority scores and categories
-- Crawl & reindex jobs — trigger fresh data fetches and re-embeddings from the dashboard
-- Document and chunk inspection — browse every ingested page and its vector chunks
-- **FAQ overrides** — curate high-priority Q&A pairs that bypass RAG retrieval for guaranteed-accurate answers
-- Conversation review — read every chat session with confidence scores and citations
-- Feedback review — user ratings and comments to guide quality improvements
-- **Evaluation runner** — run structured test cases and see pass/fail rates + per-case detail
+A full content management and quality monitoring interface for platform operators.
+
+**Overview**
+The dashboard home shows real-time platform health: total sources, ingested documents, chunk count, active chat sessions, and average confidence score across all responses. Crawl and reindex job status are shown inline.
+
+**Source Management**
+Add, edit, enable, or disable the URLs the AI learns from. Each source has a category (admissions, bursar, housing, etc.), an authority score that weights retrieval priority, and an optional office key for routing. Toggling a source live immediately excludes it from future retrieval without requiring a reindex.
+
+**Crawl & Reindex Jobs**
+Trigger a fresh crawl of all active sources directly from the dashboard. After crawling, run a reindex job to re-chunk, re-embed, and reload vectors into pgvector — all without touching code.
+
+**Document & Chunk Inspection**
+Browse every ingested page and drill down into the individual text chunks that make up the vector index. Each chunk shows its heading, content preview, token count, and embedding status.
+
+**FAQ Overrides**
+Curate guaranteed-correct Q&A pairs that bypass RAG retrieval entirely. Set priority levels so high-confidence answers (e.g., application deadlines, tuition figures) are always returned first, regardless of what the retrieval pipeline finds.
+
+**Conversation Review**
+Read every user chat session in full — messages, citations, confidence scores, and office routing decisions. Useful for auditing AI behavior and catching bad answers before users report them.
+
+**Feedback & Evaluation**
+- Feedback tab: user thumbs-up/down ratings and free-text comments per response
+- Evaluation runner: run a structured test suite of SBU Q&A cases and see pass/fail rates, average scores, and per-case detail view — a full LLM evaluation loop without leaving the browser
 
 ### SB-lumni (`:3002`)
 AI-powered alumni matching and community for Stony Brook graduates.
