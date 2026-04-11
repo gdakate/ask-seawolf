@@ -77,7 +77,7 @@ const BUBBLES: [number, number, number, number][] = [
   [7,  88, 0.7, 6.0], [9,  95, 1.5, 4.5],
 ];
 
-export default function SeaportHome() {
+export default function SeaWolvesHome() {
   return (
     <div className="min-h-screen">
 
@@ -120,7 +120,7 @@ export default function SeaportHome() {
             </div>
             <div className="text-left">
               <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-bold text-[var(--text-primary)] tracking-tight leading-none">
-                Seaport
+                SeaWolves
               </h1>
               <p className="text-sm text-[var(--text-muted)] tracking-widest mt-1">SBU DIGITAL CAMPUS</p>
             </div>
@@ -319,7 +319,7 @@ export default function SeaportHome() {
       <section className="max-w-5xl mx-auto px-6 py-24">
         <div className="text-center mb-14">
           <h2 className="font-display text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mb-3">
-            Your journey through Seaport
+            Your journey through SeaWolves
           </h2>
           <p className="text-[var(--text-muted)] text-sm max-w-md mx-auto">
             From prospective student to active alumnus — each platform supports a different chapter.

@@ -33,7 +33,7 @@ export function Header() {
             </div>
             <div className="leading-tight">
               <div className="font-display font-bold text-[var(--text-primary)] text-base tracking-tight">
-                Seaport
+                SeaWolves
               </div>
               <div className="text-[9px] text-[var(--text-muted)] font-medium tracking-widest uppercase">
                 SBU Digital Campus
