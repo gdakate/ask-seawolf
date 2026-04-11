@@ -5,10 +5,16 @@ export function getToken(): string | null {
   return localStorage.getItem("alumni_token");
 }
 export function setToken(t: string) {
-  if (typeof window !== "undefined") localStorage.setItem("alumni_token", t);
+  if (typeof window !== "undefined") {
+    localStorage.setItem("alumni_token", t);
+    window.dispatchEvent(new Event("alumni_auth_change"));
+  }
 }
 export function clearToken() {
-  if (typeof window !== "undefined") localStorage.removeItem("alumni_token");
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("alumni_token");
+    window.dispatchEvent(new Event("alumni_auth_change"));
+  }
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {

@@ -1,7 +1,6 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile } from "@/lib/api";
-import { use } from "react";
 import Link from "next/link";
 
 const DEGREES: Record<string,string> = { bs:"B.S.",ba:"B.A.",ms:"M.S.",ma:"M.A.",phd:"Ph.D.",mba:"MBA",other:"" };
@@ -13,8 +12,8 @@ const OPEN_TO_LABELS: Record<string,string> = {
   events_networking: "🤝 Events & Networking",
 };
 
-export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function ProfilePage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const { data: profile, isLoading } = useQuery({ queryKey: ["profile", id], queryFn: () => getProfile(id) });
 
   if (isLoading) return <div className="flex items-center justify-center h-64 text-[var(--text-muted)]">Loading...</div>;

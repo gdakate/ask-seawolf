@@ -1,11 +1,52 @@
 """Retrieval service: vector search, hybrid retrieval, citation packaging."""
 import uuid
 import re
+import json
+import hashlib
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text, func
 from app.models.models import Chunk, Document, Source, OfficeContact, FAQEntry
 from app.services.ai_providers import get_embedding_provider
 from app.schemas.schemas import Citation, OfficeRouting
+from app.core.config import get_settings
+
+_settings = get_settings()
+_redis_client = None
+
+async def _get_redis():
+    global _redis_client
+    if _redis_client is None:
+        try:
+            import redis.asyncio as aioredis
+            _redis_client = aioredis.from_url(_settings.redis_url, decode_responses=True)
+        except Exception:
+            _redis_client = None
+    return _redis_client
+
+
+async def _get_cached_embedding(query: str) -> list[float] | None:
+    r = await _get_redis()
+    if r is None:
+        return None
+    key = "emb:" + hashlib.md5(query.lower().strip().encode()).hexdigest()
+    try:
+        cached = await r.get(key)
+        if cached:
+            return json.loads(cached)
+    except Exception:
+        pass
+    return None
+
+
+async def _cache_embedding(query: str, embedding: list[float]) -> None:
+    r = await _get_redis()
+    if r is None:
+        return
+    key = "emb:" + hashlib.md5(query.lower().strip().encode()).hexdigest()
+    try:
+        await r.set(key, json.dumps(embedding), ex=3600)  # 1-hour TTL
+    except Exception:
+        pass
 
 # ── Category routing map ──────────────────────────────────────────────
 # Maps keyword patterns (lowercase) to source name substrings for boosting.
@@ -114,7 +155,11 @@ async def retrieve_chunks(
 ) -> list[dict]:
     """Hybrid retrieval: category-boosted vector search + keyword fallback + re-ranking."""
     provider = get_embedding_provider()
-    query_embedding = await provider.embed_query(query)
+    # Check Redis cache before running CPU inference
+    query_embedding = await _get_cached_embedding(query)
+    if query_embedding is None:
+        query_embedding = await provider.embed_query(query)
+        await _cache_embedding(query, query_embedding)
     embedding_str = f"[{','.join(str(x) for x in query_embedding)}]"
 
     category_hints = _detect_category_hints(query)

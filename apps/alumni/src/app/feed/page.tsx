@@ -211,7 +211,11 @@ export default function FeedPage() {
         {posts?.length === 0 && (
           <div className="text-center py-16 text-[var(--text-muted)]">
             <div className="text-4xl mb-3">🌊</div>
-            <p className="text-sm">No posts yet — be the first to share!</p>
+            <p className="text-sm font-medium text-[var(--text-secondary)] mb-2">Your feed is empty</p>
+            <p className="text-xs mb-5">Connect with other Seawolves to see their posts here.</p>
+            <a href="/people" className="px-5 py-2.5 btn-water text-white rounded-xl text-sm font-semibold">
+              Find People →
+            </a>
           </div>
         )}
       </div>

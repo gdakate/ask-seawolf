@@ -16,6 +16,14 @@ logger = structlog.get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Ask Seawolves API", environment=settings.environment)
+    # Pre-warm the embedding model so the first user query is fast
+    try:
+        from app.services.ai_providers import get_embedding_provider
+        provider = get_embedding_provider()
+        await provider.embed_query("warm up")
+        logger.info("Embedding model pre-warmed")
+    except Exception as e:
+        logger.warning("Embedding pre-warm failed", error=str(e))
     yield
     logger.info("Shutting down Ask Seawolves API")
 
