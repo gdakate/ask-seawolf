@@ -270,8 +270,6 @@ class BedrockEmbeddingProvider(EmbeddingProvider):
         for text in texts:
             body = json.dumps({
                 "inputText": text,
-                "outputEmbeddingLength": settings.embedding_dimensions,
-                "normalize": True,
             })
             response = self.client.invoke_model(
                 modelId=self.model_id,
