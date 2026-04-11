@@ -104,10 +104,15 @@ def category_names_map() -> dict[str, str]:
     }
 
 
+MAX_EMBED_CHARS = 30000  # Titan v2 limit ~8192 tokens ≈ 30k chars
+
+
 async def embed_batch(texts: list[str]) -> list[list[float]]:
     from app.services.ai_providers import get_embedding_provider
     provider = get_embedding_provider()
-    return await provider.embed(texts)
+    # Truncate oversized chunks so Titan doesn't reject them
+    safe_texts = [t[:MAX_EMBED_CHARS] for t in texts]
+    return await provider.embed(safe_texts)
 
 
 def safe_category(cat: str) -> SourceCategory:
