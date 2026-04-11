@@ -3,11 +3,11 @@
 A unified AI platform for Stony Brook University, built for every stage of the Seawolf journey.
 
 ```
-http://localhost:3000   Seaport Portal       — unified landing page
-http://localhost:3001   Admin Dashboard      — content & evaluation tools
-http://localhost:3002   SB-lumni             — alumni matching & community
-http://localhost:3003   StudyCoach           — AI-powered Socratic tutor
-http://localhost:8000   FastAPI Backend      — shared API for all apps
+localhost:3000   Seaport Portal       — unified landing page for all apps
+localhost:3001   Admin Dashboard      — source mgmt, crawl jobs, eval, FAQ
+localhost:3002   SB-lumni             — alumni matching & community
+localhost:3003   StudyCoach           — AI-powered Socratic tutor
+localhost:8000   FastAPI Backend      — shared API for all apps
 ```
 
 ---
@@ -20,6 +20,31 @@ RAG-powered Q&A chatbot grounded in official SBU data.
 - Answers with source citations and confidence scores
 - Office routing when a human is the right answer
 - Conversation history, topic browsing, keyword search
+
+### Admin Dashboard (`:3001`)
+A full content management and quality monitoring interface for platform operators.
+
+**Overview**
+The dashboard home shows real-time platform health: total sources, ingested documents, chunk count, active chat sessions, and average confidence score across all responses. Crawl and reindex job status are shown inline.
+
+**Source Management**
+Add, edit, enable, or disable the URLs the AI learns from. Each source has a category (admissions, bursar, housing, etc.), an authority score that weights retrieval priority, and an optional office key for routing. Toggling a source live immediately excludes it from future retrieval without requiring a reindex.
+
+**Crawl & Reindex Jobs**
+Trigger a fresh crawl of all active sources directly from the dashboard. After crawling, run a reindex job to re-chunk, re-embed, and reload vectors into pgvector — all without touching code.
+
+**Document & Chunk Inspection**
+Browse every ingested page and drill down into the individual text chunks that make up the vector index. Each chunk shows its heading, content preview, token count, and embedding status.
+
+**FAQ Overrides**
+Curate guaranteed-correct Q&A pairs that bypass RAG retrieval entirely. Set priority levels so high-confidence answers (e.g., application deadlines, tuition figures) are always returned first, regardless of what the retrieval pipeline finds.
+
+**Conversation Review**
+Read every user chat session in full — messages, citations, confidence scores, and office routing decisions. Useful for auditing AI behavior and catching bad answers before users report them.
+
+**Feedback & Evaluation**
+- Feedback tab: user thumbs-up/down ratings and free-text comments per response
+- Evaluation runner: run a structured test suite of SBU Q&A cases and see pass/fail rates, average scores, and per-case detail view — a full LLM evaluation loop without leaving the browser
 
 ### SB-lumni (`:3002`)
 AI-powered alumni matching and community for Stony Brook graduates.
@@ -44,10 +69,10 @@ Socratic AI tutor built around a student's own course materials.
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Seaport Portal           localhost:3000     │
-│  Admin Dashboard          localhost:3001     │
-│  SB-lumni                 localhost:3002     │
-│  StudyCoach               localhost:3003     │
+│  Seaport Portal     localhost:3000            │
+│  Admin Dashboard    localhost:3001            │
+│  SB-lumni           localhost:3002            │
+│  StudyCoach         localhost:3003            │
 │           (Next.js App Router, TailwindCSS)  │
 ├─────────────────────────────────────────────┤
 │  FastAPI Backend          localhost:8000     │
