@@ -104,7 +104,7 @@ def category_names_map() -> dict[str, str]:
     }
 
 
-MAX_EMBED_CHARS = 20000  # Titan v2 hard limit is 8192 tokens; 20k chars ≈ 5k tokens (safe)
+MAX_EMBED_CHARS = 15000  # Titan v2 hard limit is 8192 tokens; 15k chars ≈ 7k tokens (safe)
 
 
 async def embed_batch(texts: list[str]) -> list[list[float]]:
@@ -140,11 +140,11 @@ async def load(db: AsyncSession, reload: bool = False):
         return
 
     if reload:
-        print("Reload requested — truncating all data...")
+        print("Reload requested — truncating all data...", flush=True)
         from sqlalchemy import text
         await db.execute(text("TRUNCATE TABLE chunks, documents, sources RESTART IDENTITY CASCADE"))
-        await db.flush()
-        print("  Cleared all sources/documents/chunks.")
+        await db.commit()
+        print("  Cleared all sources/documents/chunks.", flush=True)
 
     from app.core.config import get_settings
     print(f"  Using AI provider: {get_settings().ai_provider}")
@@ -175,8 +175,8 @@ async def load(db: AsyncSession, reload: bool = False):
             db.add(src)
             sources[cat] = src
 
-    await db.flush()
-    print(f"  Created/reused {len(sources)} sources")
+    await db.commit()
+    print(f"  Created/reused {len(sources)} sources", flush=True)
 
     # Create Documents (one per unique URL)
     for item in chunks_data:
@@ -199,14 +199,26 @@ async def load(db: AsyncSession, reload: bool = False):
         db.add(doc)
         documents[url] = doc
 
-    await db.flush()
-    print(f"  Created {len(documents)} documents")
+    await db.commit()
+    print(f"  Created {len(documents)} documents", flush=True)
 
     # Create Chunks with embeddings in batches
+    # Count already-embedded chunks so we can resume if interrupted
+    from sqlalchemy import func
+    existing_count_result = await db.execute(
+        select(func.count()).select_from(Chunk)
+    )
+    existing_count = existing_count_result.scalar() or 0
+    skip_batches = existing_count // BATCH_SIZE
+    if existing_count > 0:
+        print(f"  Resuming from {existing_count} existing chunks (skipping first {skip_batches} batches)...")
+
     total = len(chunks_data)
-    created = 0
+    created = existing_count
 
     for batch_start in range(0, total, BATCH_SIZE):
+        if batch_start < skip_batches * BATCH_SIZE:
+            continue  # skip already-committed batches
         batch = chunks_data[batch_start: batch_start + BATCH_SIZE]
         texts = [item["text"] for item in batch]
         embeddings = await embed_batch(texts)
@@ -224,12 +236,11 @@ async def load(db: AsyncSession, reload: bool = False):
             db.add(chunk)
             created += 1
 
-        await db.flush()
+        await db.commit()  # commit each batch so progress is saved
         pct = min(100, int((batch_start + BATCH_SIZE) / total * 100))
-        print(f"  Embedded {min(batch_start + BATCH_SIZE, total)}/{total} chunks ({pct}%)...")
+        print(f"  Embedded {min(batch_start + BATCH_SIZE, total)}/{total} chunks ({pct}%)...", flush=True)
 
-    await db.commit()
-    print(f"\nDone! Loaded {created} chunks from real SBU data.")
+    print(f"\nDone! Loaded {created} chunks from real SBU data.", flush=True)
 
 
 async def main():
