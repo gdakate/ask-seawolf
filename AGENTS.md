@@ -22,3 +22,4 @@
 - Docker Compose for local development
 - Terraform for AWS infrastructure definitions
 - JWT-based admin auth with Cognito-ready abstraction
+- Amazon Bedrock for hosting
