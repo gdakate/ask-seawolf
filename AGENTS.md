@@ -1,4 +1,4 @@
-# AGENTS.md — Stony Brook AI Assistant Platform
+# AGENTS.md — Stony Brook AI Assistant Platform : Ask Seawolves
 
 ## Project Rules
 
