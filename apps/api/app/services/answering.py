@@ -151,6 +151,12 @@ def _build_context(chunks: list[dict]) -> str:
     return "\n".join(parts)
 
 
+def build_prompt(question: str, chunks: list[dict]) -> str:
+    """Public wrapper used by tests and external callers."""
+    context = _build_context(chunks)
+    return ANSWER_PROMPT_TEMPLATE.format(context=context, question=question)
+
+
 # ─── Main entry point ─────────────────────────────────────────────────
 
 async def generate_answer(
