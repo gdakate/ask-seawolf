@@ -12,7 +12,7 @@ export function Footer() {
             <h3 className="font-display font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
               {/* Small wave-dot decoration */}
               <span className="w-2 h-2 rounded-full bg-water-current shadow-[0_0_6px_rgba(14,165,233,0.5)]" />
-              Ask Seawolves
+              SB-Alumni
             </h3>
             <p className="text-[var(--text-muted)] leading-relaxed text-sm">
               Answers are generated from official Stony Brook University sources.
@@ -53,7 +53,7 @@ export function Footer() {
         <div className="mt-8 pt-6 border-t border-[var(--border)] flex items-center justify-center gap-3 text-xs text-[var(--text-muted)]">
           {/* Decorative dots — like light through water */}
           <span className="w-1.5 h-1.5 rounded-full bg-water-foam/60" />
-          <span>&copy; {new Date().getFullYear()} Ask Seawolves</span>
+          <span>&copy; {new Date().getFullYear()} SB-Alumni</span>
           <span className="w-1.5 h-1.5 rounded-full bg-water-foam/60" />
         </div>
       </div>

@@ -4,7 +4,7 @@ import { Providers } from "@/components/providers";
 import { Header } from "@/components/header";
 
 export const metadata: Metadata = {
-  title: "Seawolf Alumni — SBU Alumni Community",
+  title: "SB-Alumni — SBU Alumni Community",
   description: "Connect with Stony Brook alumni. AI-powered matching for coffee chats, mentoring, and career opportunities.",
 };
 

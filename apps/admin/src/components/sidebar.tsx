@@ -26,7 +26,7 @@ export function Sidebar() {
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-sbu-red flex items-center justify-center text-white font-bold text-xs">SB</div>
           <div>
-            <div className="text-sm font-semibold">Ask Seawolves</div>
+            <div className="text-sm font-semibold">SB-Alumni</div>
             <div className="text-[10px] text-gray-400 uppercase tracking-wider">Admin Panel</div>
           </div>
         </div>
