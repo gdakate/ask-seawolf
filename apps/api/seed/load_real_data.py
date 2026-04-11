@@ -104,7 +104,7 @@ def category_names_map() -> dict[str, str]:
     }
 
 
-MAX_EMBED_CHARS = 30000  # Titan v2 limit ~8192 tokens ≈ 30k chars
+MAX_EMBED_CHARS = 20000  # Titan v2 hard limit is 8192 tokens; 20k chars ≈ 5k tokens (safe)
 
 
 async def embed_batch(texts: list[str]) -> list[list[float]]:
