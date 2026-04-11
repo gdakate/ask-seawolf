@@ -111,6 +111,11 @@ def _detect_type(filename: str) -> str:
     if ext in CODE_EXTENSIONS:    return "code"
     return "txt"
 
+def _sanitize(text: str) -> str:
+    """Remove null bytes and other chars PostgreSQL rejects in UTF-8."""
+    return text.replace("\x00", "").strip()
+
+
 def _parse_file(content: bytes, file_type: str, filename: str) -> list[dict]:
     """Parse file into raw page/slide chunks: [{"page": int, "content": str}]"""
     try:
@@ -121,14 +126,14 @@ def _parse_file(content: bytes, file_type: str, filename: str) -> list[dict]:
                 for i, page in enumerate(pdf.pages):
                     t = page.extract_text()
                     if t and t.strip():
-                        pages.append({"page": i + 1, "content": t.strip()})
+                        pages.append({"page": i + 1, "content": _sanitize(t)})
             return pages
 
         if file_type == "docx":
             import docx, io
             doc = docx.Document(io.BytesIO(content))
             text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
-            return [{"page": 1, "content": text}]
+            return [{"page": 1, "content": _sanitize(text)}]
 
         if file_type == "pptx":
             from pptx import Presentation
@@ -141,18 +146,18 @@ def _parse_file(content: bytes, file_type: str, filename: str) -> list[dict]:
                     if hasattr(shape, "text") and shape.text.strip():
                         texts.append(shape.text.strip())
                 if texts:
-                    pages.append({"page": i, "content": "\n".join(texts)})
+                    pages.append({"page": i, "content": _sanitize("\n".join(texts))})
             return pages
 
         if file_type == "csv":
             import pandas as pd, io
             df = pd.read_csv(io.BytesIO(content))
             summary = f"Columns: {', '.join(df.columns)}\nRows: {len(df)}\n\nFirst 10 rows:\n{df.head(10).to_string()}"
-            return [{"page": 1, "content": summary}]
+            return [{"page": 1, "content": _sanitize(summary)}]
 
         # txt, code, fallback
         text = content.decode("utf-8", errors="ignore")
-        return [{"page": 1, "content": text}]
+        return [{"page": 1, "content": _sanitize(text)}]
 
     except Exception:
         text = content.decode("utf-8", errors="ignore")
@@ -423,7 +428,7 @@ async def upload_material(
 
     # Parse into page chunks
     pages = _parse_file(content, file_type, fname)
-    raw_text = "\n\n".join(p["content"] for p in pages)
+    raw_text = _sanitize("\n\n".join(p["content"] for p in pages))
     material.raw_text = raw_text
 
     # Group into logical sections
