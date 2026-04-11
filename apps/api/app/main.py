@@ -7,6 +7,7 @@ import structlog
 from app.core.config import get_settings
 from app.routers.public import router as public_router
 from app.routers.admin import router as admin_router
+from app.routers.alumni import router as alumni_router
 
 settings = get_settings()
 logger = structlog.get_logger()
@@ -39,6 +40,7 @@ app.add_middleware(
 # Mount routers
 app.include_router(public_router, prefix="/api", tags=["Public"])
 app.include_router(admin_router, prefix="/api", tags=["Admin"])
+app.include_router(alumni_router, prefix="/api", tags=["Alumni"])
 
 
 @app.get("/")
