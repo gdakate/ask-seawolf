@@ -1,216 +1,209 @@
-# Ask Seawolves — Stony Brook University AI Assistant Platform
+# Seaport — SBU Digital Campus
 
-A production-ready, RAG-powered Q&A platform for Stony Brook University public information, plus **SB-lumni** — an AI-powered alumni matching and community platform exclusively for SBU graduates.
+A unified AI platform for Stony Brook University, built for every stage of the Seawolf journey.
+
+```
+http://localhost:3000   Seaport Portal       — unified landing page
+http://localhost:3001   Admin Dashboard      — content & evaluation tools
+http://localhost:3002   SB-lumni             — alumni matching & community
+http://localhost:3003   StudyCoach           — AI-powered Socratic tutor
+http://localhost:8000   FastAPI Backend      — shared API for all apps
+```
+
+---
+
+## The Three Platforms
+
+### Ask Seawolf (`/chat`)
+RAG-powered Q&A chatbot grounded in official SBU data.
+- 22,000+ chunks crawled from stonybrook.edu
+- Answers with source citations and confidence scores
+- Office routing when a human is the right answer
+- Conversation history, topic browsing, keyword search
+
+### SB-lumni (`:3002`)
+AI-powered alumni matching and community for Stony Brook graduates.
+- Registration restricted to `@stonybrook.edu` / `@alumni.stonybrook.edu`
+- 3-step onboarding with optional résumé upload (LLM-parsed)
+- **Two-stage matching pipeline**: ANN retrieval via pgvector → multi-signal reranking (major, career, skills Jaccard, graduation year proximity, MMR diversity)
+- Connect / disconnect with other alumni
+- Community feed with hashtags, comments, and likes
+
+### StudyCoach (`:3003`)
+Socratic AI tutor built around a student's own course materials.
+- Create courses, upload PDFs / DOCX / PPTX / code files
+- AI auto-generates a **learning map** with titled sections and prereq relationships
+- Per-material tab view, section-level study sessions
+- **Teach mode**: AI teaches one concept at a time, asks one question per turn — it never just gives the answer
+- Resume or restart any past study session
+- Dashboard with all sessions, study plan, and progress ring
+
+---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Public Web App                     │
-│                   (Next.js :3000)                     │
-├─────────────────────────────────────────────────────┤
-│                   Admin Dashboard                     │
-│                   (Next.js :3001)                     │
-├─────────────────────────────────────────────────────┤
-│               SB-lumni Alumni Platform                │
-│                   (Next.js :3002)                     │
-├─────────────────────────────────────────────────────┤
-│                    FastAPI Backend                     │
-│                     (Python :8000)                     │
-│  ┌──────────┬───────────┬────────────┬────────────┐  │
-│  │ Ingestion│  Indexing  │ Retrieval  │ Answering  │  │
-│  └──────────┴───────────┴────────────┴────────────┘  │
-├─────────────────────────────────────────────────────┤
-│  PostgreSQL + pgvector  │  Redis  │  S3/Local Storage │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  Seaport Portal           localhost:3000     │
+│  Admin Dashboard          localhost:3001     │
+│  SB-lumni                 localhost:3002     │
+│  StudyCoach               localhost:3003     │
+│           (Next.js App Router, TailwindCSS)  │
+├─────────────────────────────────────────────┤
+│  FastAPI Backend          localhost:8000     │
+│  ┌──────────┬────────────┬────────────────┐  │
+│  │  /public │  /alumni   │  /studycoach   │  │
+│  │  RAG Q&A │  Matching  │  AI Teaching   │  │
+│  └──────────┴────────────┴────────────────┘  │
+│  /admin — content, crawl, eval, FAQ mgmt     │
+├─────────────────────────────────────────────┤
+│  PostgreSQL + pgvector   │   Redis           │
+│  File Storage (local/S3) │   Alembic         │
+└─────────────────────────────────────────────┘
 ```
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- (Optional for AI answers) [Ollama](https://ollama.com)
-
-### Run with Docker
+- Git
 
 ```bash
-# 1. Clone the repo
 git clone https://github.com/gdakate/ask-seawolf.git
 cd ask-seawolf
 
-# 2. Copy environment config
 cp .env.example .env
 
-# 3. Start all services (builds images, runs migrations, seeds demo data)
 docker compose up -d --build
-
-# 4. Seed alumni demo data (50+ profiles + posts + connections)
-docker compose exec api python seed_alumni.py
-docker compose exec api python seed_posts.py
 ```
 
-Once running:
-- Public web app:    http://localhost:3000
-- Admin dashboard:  http://localhost:3001
-- SB-lumni:         http://localhost:3002
-- API docs:         http://localhost:8000/docs
+That's it. All four apps and the API will start together.
 
-### Load Real SBU Data (required for useful answers)
+Optionally seed demo data:
+```bash
+docker compose exec api python seed_alumni.py   # 50+ alumni profiles
+docker compose exec api python seed_posts.py    # feed posts + connections
+```
 
-The crawled dataset is not stored in git (it's ~25MB). Generate it:
+### Default Accounts
+
+| App | Email | Password |
+|---|---|---|
+| Admin (`localhost:3001`) | `admin@stonybrook.edu` | `admin123` |
+| SB-lumni (`localhost:3002`) | `wolfie@stonybrook.edu` | `12345678` |
+| All seeded alumni | any seeded `@stonybrook.edu` email | `demo1234` |
+
+For StudyCoach and Ask Seawolf, register with any `@stonybrook.edu` address.
+
+---
+
+## Load SBU Data (for real Q&A answers)
+
+The crawled dataset isn't stored in git (~25 MB). Run these once:
 
 ```bash
-# Step 1 — Crawl the SBU website (~20 min, fetches up to 5000 pages)
+# Crawl stonybrook.edu — fetches up to 5,000 pages (~20 min)
 docker compose exec api python /app/data/crawl_sbu.py
 
-# Step 2 — Embed and load into the database (~20 min, CPU-only)
+# Embed and load into the database (~20 min, CPU-only)
 docker compose exec api python -m seed.load_real_data --reload
 ```
 
-To recrawl and refresh the data any time, just run both commands again.
+---
 
-### Enable AI Answer Generation (optional)
+## AI Provider
 
-Without this, the app returns raw retrieved text. With it, answers are synthesized by an LLM.
+Set `AI_PROVIDER` in `.env`:
 
-**Option A — Local (free, private, no API key)**
+| Value | LLM | Embeddings | Cost |
+|---|---|---|---|
+| `mock` (default) | none — returns raw retrieved text | — | free |
+| `local` | Ollama / llama3.2 | fastembed / BGE-small | free, offline |
+| `openai` | GPT-4o | text-embedding-3-small | OpenAI pricing |
+| `bedrock` | Claude 3 Sonnet | Titan Text v2 | AWS pricing |
+
+**For local (offline, no API key):**
 ```bash
-brew install ollama        # macOS
-ollama serve               # start the server
-ollama pull llama3.2       # download model (~2GB, one time)
+brew install ollama
+ollama serve
+ollama pull llama3.2
+# then set AI_PROVIDER=local in .env and restart: docker compose up -d api
 ```
-Set in `.env`: `AI_PROVIDER=local`
 
-**Option B — OpenAI**
-Set in `.env`:
-```
-AI_PROVIDER=openai
-OPENAI_API_KEY=sk-...
-```
-Then restart: `docker compose up -d api`
-
-### Default Login Accounts
-
-**Admin Dashboard** (http://localhost:3001)
-- Email: `admin@stonybrook.edu`
-- Password: `admin123`
-
-**SB-lumni Alumni Platform** (http://localhost:3002)
-- Email: `wolfie@stonybrook.edu`
-- Password: `12345678`
-
-> All 50+ seeded alumni accounts use password `demo1234`.
+---
 
 ## Project Structure
 
 ```
+ask-seawolf/
 ├── apps/
-│   ├── web/          # Public Next.js frontend (Ask Wolfie)
-│   ├── admin/        # Admin Next.js dashboard
-│   ├── alumni/       # SB-lumni Next.js frontend (:3002)
-│   └── api/          # FastAPI backend (shared)
+│   ├── web/            # Seaport portal + Ask Seawolf chat (port 3000)
+│   ├── admin/          # Admin dashboard (port 3001)
+│   ├── alumni/         # SB-lumni frontend (port 3002)
+│   ├── studycoach/     # StudyCoach frontend (port 3003)
+│   └── api/            # FastAPI backend (shared, port 8000)
 │       ├── app/
-│       │   ├── core/       # Config, database, auth
-│       │   ├── models/     # SQLAlchemy models
-│       │   ├── schemas/    # Pydantic schemas
-│       │   ├── routers/    # API endpoints
-│       │   │   └── alumni.py  # Alumni platform routes
-│       │   └── services/   # Business logic (RAG + matching pipeline)
-│       ├── migrations/     # Alembic migrations (001–005)
-│       ├── seed/           # Ask Wolfie demo seed data
-│       ├── seed_alumni.py  # Alumni profiles + embeddings seed
-│       ├── seed_posts.py   # Alumni feed posts + connections seed
-│       └── tests/          # pytest tests
-├── infra/terraform/        # AWS infrastructure
-├── docs/                   # Documentation
-├── docker-compose.yml      # Local development stack
-└── Makefile               # Common commands
+│       │   ├── routers/
+│       │   │   ├── public.py       # Ask Seawolf RAG endpoints
+│       │   │   ├── alumni.py       # SB-lumni matching + feed
+│       │   │   ├── studycoach.py   # Courses, materials, sessions, teach
+│       │   │   └── admin.py        # Admin CRUD + eval
+│       │   ├── models/             # SQLAlchemy ORM models
+│       │   ├── services/           # RAG pipeline, matching, AI providers
+│       │   └── core/               # Config, DB session, JWT auth
+│       ├── migrations/             # Alembic (001–006)
+│       ├── seed_alumni.py
+│       └── seed_posts.py
+├── infra/terraform/    # AWS ECS/Fargate infrastructure
+├── docs/               # Architecture, deployment, RAG pipeline docs
+├── docker-compose.yml
+└── .env.example
 ```
+
+---
+
+## Useful Commands
+
+```bash
+# Rebuild and start everything
+docker compose up -d --build
+
+# Follow logs
+docker compose logs -f
+
+# Run backend tests
+docker compose exec api pytest
+
+# Open API docs
+open http://localhost:8000/docs
+
+# Run a migration
+docker compose exec api alembic upgrade head
+
+# Shell into the API container
+docker compose exec api bash
+```
+
+---
 
 ## Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `AI_PROVIDER` | `mock` | AI backend: `mock`, `openai`, or `bedrock` |
-| `OPENAI_API_KEY` | — | OpenAI API key (when AI_PROVIDER=openai) |
-| `DATABASE_URL` | — | PostgreSQL connection string |
-| `REDIS_URL` | — | Redis connection string |
-| `STORAGE_BACKEND` | `local` | Storage: `local` or `s3` |
-| `JWT_SECRET` | — | Secret for admin JWT tokens |
+| `AI_PROVIDER` | `mock` | `mock` / `local` / `openai` / `bedrock` |
+| `OPENAI_API_KEY` | — | Required when `AI_PROVIDER=openai` |
+| `DATABASE_URL` | (see .env.example) | PostgreSQL async connection string |
+| `REDIS_URL` | `redis://redis:6379/0` | Redis connection |
+| `JWT_SECRET` | — | Change in production |
+| `STORAGE_BACKEND` | `local` | `local` or `s3` |
 
-See `.env.example` for the full list.
+Full list in `.env.example`.
 
-## AI Provider Configuration
-
-The platform supports four AI provider modes:
-
-- **Mock** (default): Returns raw retrieved text. No external service needed. Good for testing retrieval.
-- **Local**: Ollama (LLM) + fastembed (embeddings). Fully offline, no API key. Set `AI_PROVIDER=local`.
-- **OpenAI**: Set `AI_PROVIDER=openai` and `OPENAI_API_KEY`. Uses GPT-4o + text-embedding-3-small.
-- **AWS Bedrock**: Set `AI_PROVIDER=bedrock` with AWS credentials. Uses Claude + Titan embeddings.
-
-## Key Features
-
-### Public App — Ask Wolfie
-- Chat interface with real-time Q&A
-- Source citations on every answer
-- Office routing for human help
-- Topic browsing and document search
-- Confidence indicators and warnings
-
-### Admin Dashboard
-- Source management (CRUD)
-- Document and chunk inspection
-- Crawl/index job management
-- Conversation and feedback review
-- FAQ override management with semantic clustering
-- Evaluation runner with per-case detail view
-- Live settings and analytics
-
-### RAG Pipeline
-- Heading-aware document chunking
-- Vector search via pgvector
-- Keyword fallback search
-- Citation bundling
-- Office routing detection
-- Confidence scoring
-- Term-dependency warnings
-
-### SB-lumni — Alumni Platform
-- SBU-only registration (`@stonybrook.edu` / `@alumni.stonybrook.edu`)
-- 3-step onboarding with optional résumé upload (LLM-parsed)
-- **AI-powered People matching** — 2-stage pipeline:
-  - Stage 1: ANN retrieval via pgvector (cosine similarity on profile/skills/interests embeddings)
-  - Stage 2: Multi-signal reranking (major, career path, skills Jaccard, graduation proximity, open-to compatibility)
-  - MMR (Maximal Marginal Relevance) diversity selection, λ = 0.7
-  - Human-readable match reasons on every card
-- **Connect system** — connect/disconnect with any alumni, dedicated Connected tab
-- **Community Feed** — post with hashtags (#career, #research, #networking, …), comments, likes
-- Profile view & edit (own profile + public profiles of other alumni)
-- 50+ seeded alumni profiles across all majors, industries, degrees, and graduation years (2007–2025)
-
-## Makefile Commands
-
-```bash
-make up          # Start all services
-make down        # Stop all services
-make test        # Run backend tests
-make logs        # Follow logs
-make seed        # Re-run seed data
-make migrate     # Run migrations
-make shell-api   # Shell into API container
-make shell-db    # Open psql shell
-```
+---
 
 ## Deployment
 
-See `docs/deployment.md` for AWS deployment instructions using Terraform and ECS/Fargate.
-
-## Documentation
-
-- [Architecture](docs/architecture.md)
-- [Local Development](docs/local-development.md)
-- [Deployment](docs/deployment.md)
-- [Data Model](docs/data-model.md)
-- [RAG Pipeline](docs/rag-pipeline.md)
-- [Admin Guide](docs/admin-guide.md)
+AWS infrastructure (ECS Fargate + RDS + ElastiCache) is defined in `infra/terraform/`.
+See [`docs/deployment.md`](docs/deployment.md) for step-by-step instructions.
