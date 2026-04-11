@@ -30,7 +30,7 @@ Full content management and quality monitoring interface for platform operators.
 - **Conversation review** — read every chat session with full message history, confidence scores, and citations
 - **Evaluation runner** — run structured SBU Q&A test suites and see pass/fail rates and scores per case
 
-### SB-lumni (`:3002`)
+### SB-Alumni (`:3002`)
 AI-powered alumni matching and community for Stony Brook graduates.
 - Restricted to `@stonybrook.edu` / `@alumni.stonybrook.edu` — enforced via JWT domain check
 - 3-step onboarding with optional résumé upload (LLM-parsed)
@@ -99,22 +99,6 @@ docker compose exec api python seed_posts.py    # feed posts + connections
 
 For Ask Seawolf and StudyCoach, register with any `@stonybrook.edu` address.
 
----
-
-## Load SBU Data (for real Q&A answers)
-
-The crawled dataset isn't stored in git (~25 MB). Run these once:
-
-```bash
-# Crawl stonybrook.edu — up to 5,000 pages (~20 min)
-docker compose exec api python /app/data/crawl_sbu.py
-
-# Embed and load into the database (~20 min, CPU-only)
-docker compose exec api python -m seed.load_real_data --reload
-```
-
----
-
 ## AI Provider
 
 Set `AI_PROVIDER` in `.env`:
@@ -126,11 +110,6 @@ Set `AI_PROVIDER` in `.env`:
 | `openai` | GPT-4o | text-embedding-3-small | OpenAI pricing |
 | `bedrock` | Claude 3 Sonnet | Titan Text v2 | AWS pricing |
 
-**For local (offline, no API key):**
-```bash
-brew install ollama && ollama serve && ollama pull llama3.2
-# Set AI_PROVIDER=local in .env, then: docker compose up -d api
-```
 
 ---
 
