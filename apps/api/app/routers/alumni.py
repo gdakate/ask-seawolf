@@ -247,6 +247,9 @@ def _compute_match_score(src: AlumniProfile, tgt: AlumniProfile) -> tuple[float,
         0.03 * grad_proximity +
         0.02 * open_to_compat
     )
+    # Boost scores into a more meaningful range — raw cosine similarities
+    # tend to cluster low (0.2–0.5), making all matches look weak.
+    score = min(score * 1.5, 1.0)
 
     # Build explainable reasons
     reasons = []
@@ -318,7 +321,7 @@ async def alumni_register(req: AlumniRegisterRequest, db: AsyncSession = Depends
     user = AlumniUser(email=req.email, password_hash=hash_password(req.password), name=req.name)
     db.add(user)
     await db.flush()
-    token = create_access_token({"sub": str(user.id), "email": user.email, "type": "alumni"})
+    token = create_access_token({"sub": str(user.id), "email": user.email, "name": user.name, "type": "alumni"})
     return AlumniAuthResponse(access_token=token, user_id=str(user.id), name=user.name,
                                email=user.email, has_profile=False)
 
@@ -332,7 +335,7 @@ async def alumni_login(req: AlumniLoginRequest, db: AsyncSession = Depends(get_d
         raise HTTPException(status_code=401, detail="Invalid credentials")
     user.last_login_at = datetime.now(timezone.utc)
     profile = (await db.execute(select(AlumniProfile).where(AlumniProfile.user_id == user.id))).scalar_one_or_none()
-    token = create_access_token({"sub": str(user.id), "email": user.email, "type": "alumni"})
+    token = create_access_token({"sub": str(user.id), "email": user.email, "name": user.name, "type": "alumni"})
     return AlumniAuthResponse(access_token=token, user_id=str(user.id), name=user.name,
                                email=user.email, has_profile=profile is not None)
 
@@ -546,28 +549,39 @@ Return this exact JSON structure (use null for missing fields):
 # ─── Feed ────────────────────────────────────────────────────────────
 
 @router.get("/feed")
-async def get_feed(page: int = 1, db: AsyncSession = Depends(get_db)):
+async def get_feed(
+    page: int = 1,
+    user: AlumniUser = Depends(get_current_alumni),
+    db: AsyncSession = Depends(get_db),
+):
     page_size = 20
-    stmt = (
-        select(AlumniPost, AlumniProfile, AlumniUser)
-        .join(AlumniProfile, AlumniPost.author_id == AlumniProfile.id)
-        .join(AlumniUser, AlumniProfile.user_id == AlumniUser.id)
-        .where(AlumniPost.is_pinned == False)
-        .order_by(desc(AlumniPost.created_at))
-        .offset((page - 1) * page_size).limit(page_size)
-    )
-    result = await db.execute(stmt)
 
-    # Pinned posts first
-    pinned_result = await db.execute(
-        select(AlumniPost, AlumniProfile, AlumniUser)
-        .join(AlumniProfile, AlumniPost.author_id == AlumniProfile.id)
-        .join(AlumniUser, AlumniProfile.user_id == AlumniUser.id)
-        .where(AlumniPost.is_pinned == True)
-        .order_by(desc(AlumniPost.created_at))
-    )
+    # Find own profile
+    my_profile = (await db.execute(
+        select(AlumniProfile).where(AlumniProfile.user_id == user.id)
+    )).scalar_one_or_none()
 
-    def _post_to_dict(post, profile, user):
+    # Build set of allowed author profile IDs: own + connected users
+    allowed_profile_ids: set[uuid.UUID] = set()
+    if my_profile:
+        allowed_profile_ids.add(my_profile.id)
+        # Get connected user IDs
+        conn_result = await db.execute(
+            select(AlumniConnection).where(
+                (AlumniConnection.requester_id == user.id) |
+                (AlumniConnection.target_id == user.id)
+            )
+        )
+        for conn in conn_result.scalars().all():
+            other_id = conn.target_id if conn.requester_id == user.id else conn.requester_id
+            # Get their profile ID
+            other_profile = (await db.execute(
+                select(AlumniProfile).where(AlumniProfile.user_id == other_id)
+            )).scalar_one_or_none()
+            if other_profile:
+                allowed_profile_ids.add(other_profile.id)
+
+    def _post_to_dict(post, profile, u):
         return {
             "id": str(post.id),
             "content": post.content,
@@ -578,13 +592,34 @@ async def get_feed(page: int = 1, db: AsyncSession = Depends(get_db)):
             "created_at": post.created_at.isoformat(),
             "author": {
                 "id": str(profile.id),
-                "name": user.name,
+                "name": u.name,
                 "job_title": profile.job_title,
                 "current_company": profile.current_company,
                 "major": profile.major,
                 "graduation_year": profile.graduation_year,
             },
         }
+
+    if not allowed_profile_ids:
+        return []
+
+    # Pinned posts from allowed authors first
+    pinned_result = await db.execute(
+        select(AlumniPost, AlumniProfile, AlumniUser)
+        .join(AlumniProfile, AlumniPost.author_id == AlumniProfile.id)
+        .join(AlumniUser, AlumniProfile.user_id == AlumniUser.id)
+        .where(AlumniPost.is_pinned == True, AlumniPost.author_id.in_(allowed_profile_ids))
+        .order_by(desc(AlumniPost.created_at))
+    )
+    stmt = (
+        select(AlumniPost, AlumniProfile, AlumniUser)
+        .join(AlumniProfile, AlumniPost.author_id == AlumniProfile.id)
+        .join(AlumniUser, AlumniProfile.user_id == AlumniUser.id)
+        .where(AlumniPost.is_pinned == False, AlumniPost.author_id.in_(allowed_profile_ids))
+        .order_by(desc(AlumniPost.created_at))
+        .offset((page - 1) * page_size).limit(page_size)
+    )
+    result = await db.execute(stmt)
 
     posts = [_post_to_dict(p, pr, u) for p, pr, u in pinned_result.all()]
     posts += [_post_to_dict(p, pr, u) for p, pr, u in result.all()]

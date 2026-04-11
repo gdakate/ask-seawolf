@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { getToken, clearToken } from "@/lib/api";
 
 interface AuthState {
@@ -14,8 +15,9 @@ export function useAuth(): AuthState & { logout: () => void } {
   const [state, setState] = useState<AuthState>({
     isLoggedIn: false, userId: null, name: null, email: null, loading: true,
   });
+  const pathname = usePathname();
 
-  useEffect(() => {
+  const readToken = useCallback(() => {
     const token = getToken();
     if (!token) {
       setState({ isLoggedIn: false, userId: null, name: null, email: null, loading: false });
@@ -34,6 +36,17 @@ export function useAuth(): AuthState & { logout: () => void } {
       setState({ isLoggedIn: false, userId: null, name: null, email: null, loading: false });
     }
   }, []);
+
+  // Re-read token on every route change (catches post-login navigation)
+  useEffect(() => {
+    readToken();
+  }, [pathname, readToken]);
+
+  // Also listen for explicit auth change events (same-page updates)
+  useEffect(() => {
+    window.addEventListener("alumni_auth_change", readToken);
+    return () => window.removeEventListener("alumni_auth_change", readToken);
+  }, [readToken]);
 
   return {
     ...state,

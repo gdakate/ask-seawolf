@@ -1,7 +1,7 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createProfile, parseResume } from "@/lib/api";
+import { createProfile } from "@/lib/api";
 
 const DEGREES = ["bs","ba","ms","ma","phd","mba","other"];
 const DEGREE_LABELS: Record<string,string> = { bs:"B.S.",ba:"B.A.",ms:"M.S.",ma:"M.A.",phd:"Ph.D.",mba:"MBA",other:"Other" };
@@ -73,31 +73,8 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [parsing, setParsing] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const set = (k: keyof FormData, v: any) => setForm((f) => ({ ...f, [k]: v }));
-
-  const handleResume = async (file: File) => {
-    setParsing(true);
-    try {
-      const { extracted } = await parseResume(file);
-      setForm((f) => ({
-        ...f,
-        major: extracted.major || f.major,
-        degree: extracted.degree || f.degree,
-        graduation_year: extracted.graduation_year || f.graduation_year,
-        current_company: extracted.current_company || f.current_company,
-        job_title: extracted.job_title || f.job_title,
-        industry: extracted.industry || f.industry,
-        location: extracted.location || f.location,
-        skills: extracted.skills?.length ? extracted.skills : f.skills,
-        interests: extracted.interests?.length ? extracted.interests : f.interests,
-        bio: extracted.bio || f.bio,
-      }));
-    } catch { /* silent fail — resume parse is optional */ }
-    finally { setParsing(false); }
-  };
 
   const handleSubmit = async () => {
     if (!form.major || !form.degree || !form.graduation_year) {
@@ -152,22 +129,6 @@ export default function OnboardingPage() {
             <div>
               <h2 className="font-display text-xl font-semibold text-[var(--text-primary)] mb-1">Academic Background</h2>
               <p className="text-sm text-[var(--text-muted)]">Tell us about your time at Stony Brook</p>
-            </div>
-
-            {/* Resume upload */}
-            <div className="p-4 rounded-xl border-2 border-dashed border-[var(--border)] hover:border-water-current/40 transition-colors text-center cursor-pointer"
-              onClick={() => fileRef.current?.click()}>
-              <input ref={fileRef} type="file" accept=".pdf,.txt" className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleResume(e.target.files[0])} />
-              {parsing ? (
-                <div className="text-sm text-[var(--accent)]">Parsing resume...</div>
-              ) : (
-                <>
-                  <div className="text-2xl mb-1">📄</div>
-                  <p className="text-sm font-medium text-[var(--text-secondary)]">Upload Resume (optional)</p>
-                  <p className="text-xs text-[var(--text-muted)]">PDF or TXT — auto-fills your profile</p>
-                </>
-              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -20,6 +20,7 @@ function ConnectButton({ targetUserId, initialConnected }: { targetUserId: strin
       setConnected(data.connected);
       qc.invalidateQueries({ queryKey: ["connections"] });
       qc.invalidateQueries({ queryKey: ["connection-ids"] });
+      qc.invalidateQueries({ queryKey: ["matches"] });
     },
   });
 
@@ -238,7 +239,7 @@ export default function PeoplePage() {
           {matches && matches.length > 0 && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {matches.map((m) => (
+                {matches.filter((m) => !connectedIds.has(m.profile.user_id)).map((m) => (
                   <DiscoverCard key={m.profile.id} match={m} connectedIds={connectedIds} />
                 ))}
               </div>
