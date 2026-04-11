@@ -18,7 +18,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && isLoggedIn) router.replace("/matches");
+    if (!loading && isLoggedIn) router.replace("/feed");
   }, [isLoggedIn, loading, router]);
 
   return (

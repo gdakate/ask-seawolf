@@ -27,7 +27,7 @@ function LoginContent() {
       const res = tab === "login"
         ? await login(email, password)
         : await register(email, password, name);
-      router.push(res.has_profile ? "/matches" : "/onboarding");
+      router.push(res.has_profile ? "/feed" : "/onboarding");
     } catch (err: any) {
       setError(err.message || "Authentication failed");
     } finally {

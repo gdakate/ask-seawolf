@@ -114,7 +114,7 @@ export default function OnboardingPage() {
         linkedin_url: form.linkedin_url || null,
         bio: form.bio || null,
       });
-      router.push("/matches");
+      router.push("/feed");
     } catch (err: any) {
       setError(err.message || "Failed to save profile");
     } finally { setLoading(false); }
@@ -315,7 +315,7 @@ export default function OnboardingPage() {
           ) : (
             <button onClick={handleSubmit} disabled={loading}
               className="px-6 py-2 btn-water text-white rounded-lg text-sm font-semibold disabled:opacity-50">
-              {loading ? "Saving..." : "Find My Matches 🚀"}
+              {loading ? "Saving..." : "Complete Profile →"}
             </button>
           )}
         </div>
