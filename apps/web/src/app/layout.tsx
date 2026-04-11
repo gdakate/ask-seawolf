@@ -7,7 +7,7 @@ import { Footer } from "@/components/footer";
 export const metadata: Metadata = {
   title: "SeaWolves — SBU Digital Campus",
   description:
-    "SeaWolves is the all-in-one SBU platform: Ask Seawolf for university Q&A, SB-lumni for alumni networking, and StudyCoach for AI-powered Socratic tutoring.",
+    "SeaWolves is the all-in-one SBU platform: Ask Seawolf for university Q&A, SB-Alumni for alumni networking, and StudyCoach for AI-powered Socratic tutoring.",
 };
 
 export default function RootLayout({

@@ -44,7 +44,7 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-0.5">
             {[
               { href: "/chat",              label: "Ask Seawolf" },
-              { href: "http://localhost:3002", label: "SB-lumni" },
+              { href: "http://localhost:3002", label: "SB-Alumni" },
               { href: "http://localhost:3003", label: "StudyCoach" },
               { href: "/topics",            label: "Topics" },
             ].map((link) => (

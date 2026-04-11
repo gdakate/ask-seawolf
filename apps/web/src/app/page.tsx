@@ -24,7 +24,7 @@ const PLATFORMS = [
   },
   {
     href: "http://localhost:3002",
-    label: "SB-lumni",
+    label: "SB-Alumni",
     tagline: "Alumni Network",
     desc: "AI-powered matching for Stony Brook graduates. Find mentors, collaborators, and fellow Seawolves based on major, career path, and shared interests.",
     features: ["Vector similarity matching", "Coffee chat & mentoring", "Alumni feed"],
@@ -207,7 +207,7 @@ export default function SeaWolvesHome() {
           </div>
         </Link>
 
-        {/* Card 2 — SB-lumni */}
+        {/* Card 2 — SB-Alumni */}
         <Link href="http://localhost:3002" className="group block">
           <div className="rounded-3xl overflow-hidden border border-[var(--border)] bg-white dark:bg-[var(--bg-secondary)] shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
             <div className="flex flex-col sm:flex-row">
@@ -225,7 +225,7 @@ export default function SeaWolvesHome() {
                     <ellipse cx="20" cy="29" rx="4.5" ry="4" stroke="white" strokeWidth="2" fill="rgba(255,255,255,0.2)"/>
                   </svg>
                 </div>
-                <p className="text-white font-black text-xl tracking-tight leading-none">SB-lumni</p>
+                <p className="text-white font-black text-xl tracking-tight leading-none">SB-Alumni</p>
               </div>
               <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-4 p-6 sm:p-8">
                 <div className="flex-1">
@@ -333,7 +333,7 @@ export default function SeaWolvesHome() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 relative">
             {[
               { num: "1", icon: "🔍", title: "Get Answers", sub: "Ask Seawolf", desc: "Before you even apply — find answers to every SBU question instantly.", color: "bg-sky-400" },
-              { num: "2", icon: "🤝", title: "Build Connections", sub: "SB-lumni", desc: "Graduate and stay connected. Mentor students, find collaborators, grow your network.", color: "bg-teal-400" },
+              { num: "2", icon: "🤝", title: "Build Connections", sub: "SB-Alumni", desc: "Graduate and stay connected. Mentor students, find collaborators, grow your network.", color: "bg-teal-400" },
               { num: "3", icon: "🧠", title: "Master Your Courses", sub: "StudyCoach", desc: "While you're a student — upload materials and learn through AI-guided Socratic dialogue.", color: "bg-indigo-400" },
             ].map((step) => (
               <div key={step.num} className="text-center">
@@ -364,7 +364,7 @@ export default function SeaWolvesHome() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/chat" className="px-7 py-3 btn-water text-white rounded-xl font-semibold">Ask Seawolf</Link>
-            <Link href="http://localhost:3002" className="px-7 py-3 rounded-xl border border-[var(--border)] bg-white/50 dark:bg-[var(--bg-secondary)]/50 backdrop-blur-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/50 transition-colors font-medium">SB-lumni</Link>
+            <Link href="http://localhost:3002" className="px-7 py-3 rounded-xl border border-[var(--border)] bg-white/50 dark:bg-[var(--bg-secondary)]/50 backdrop-blur-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/50 transition-colors font-medium">SB-Alumni</Link>
             <Link href="http://localhost:3003" className="px-7 py-3 rounded-xl border border-[var(--border)] bg-white/50 dark:bg-[var(--bg-secondary)]/50 backdrop-blur-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/50 transition-colors font-medium">StudyCoach</Link>
           </div>
         </div>
