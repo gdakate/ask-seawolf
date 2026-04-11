@@ -452,6 +452,114 @@ class AlumniLike(Base):
     )
 
 
+# ─── StudyCoach Models ───────────────────────────────────────────────
+
+class StudyCoachUser(Base):
+    __tablename__ = "sc_users"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    courses: Mapped[list["SCCourse"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+
+
+class SCCourse(Base):
+    __tablename__ = "sc_courses"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sc_users.id"), nullable=False)
+    code: Mapped[str] = mapped_column(String(50), nullable=False)   # e.g. CSE214
+    name: Mapped[str] = mapped_column(String(255), nullable=False)  # e.g. Data Structures
+    description: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    user: Mapped["StudyCoachUser"] = relationship(back_populates="courses")
+    materials: Mapped[list["SCMaterial"]] = relationship(back_populates="course", cascade="all, delete-orphan")
+    plan_items: Mapped[list["SCPlanItem"]] = relationship(back_populates="course", cascade="all, delete-orphan")
+    teach_sessions: Mapped[list["SCTeachSession"]] = relationship(back_populates="course", cascade="all, delete-orphan")
+
+
+class SCMaterial(Base):
+    __tablename__ = "sc_materials"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    course_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sc_courses.id"), nullable=False)
+    filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    file_type: Mapped[str] = mapped_column(String(20), nullable=False)  # pdf/docx/pptx/csv/code/txt
+    raw_text: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending/parsed/failed
+    parsed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    course: Mapped["SCCourse"] = relationship(back_populates="materials")
+    sections: Mapped[list["SCSection"]] = relationship(back_populates="material", cascade="all, delete-orphan")
+
+
+class SCSection(Base):
+    __tablename__ = "sc_sections"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    material_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sc_materials.id"), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    order: Mapped[int] = mapped_column(Integer, default=0)
+    content: Mapped[str | None] = mapped_column(Text)
+    difficulty: Mapped[int] = mapped_column(Integer, default=3)  # 1-5
+    concepts: Mapped[list] = mapped_column(JSON, default=list)      # ["concept1", ...]
+    prerequisites: Mapped[list] = mapped_column(JSON, default=list) # ["prereq1", ...]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    material: Mapped["SCMaterial"] = relationship(back_populates="sections")
+    teach_sessions: Mapped[list["SCTeachSession"]] = relationship(back_populates="section")
+
+
+class SCPlanItem(Base):
+    __tablename__ = "sc_plan_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    course_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sc_courses.id"), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    item_type: Mapped[str] = mapped_column(String(30), default="study")  # lecture/assignment/exam/review/study
+    is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    notes: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    course: Mapped["SCCourse"] = relationship(back_populates="plan_items")
+
+
+class SCTeachSession(Base):
+    __tablename__ = "sc_teach_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    course_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sc_courses.id"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sc_users.id"), nullable=False)
+    section_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("sc_sections.id"))
+    knowledge_level: Mapped[str] = mapped_column(String(20), default="unknown")  # unknown/partial/confident
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    course: Mapped["SCCourse"] = relationship(back_populates="teach_sessions")
+    section: Mapped["SCSection | None"] = relationship(back_populates="teach_sessions")
+    messages: Mapped[list["SCTeachMessage"]] = relationship(back_populates="session", cascade="all, delete-orphan")
+
+
+class SCTeachMessage(Base):
+    __tablename__ = "sc_teach_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("sc_teach_sessions.id"), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), nullable=False)  # user/assistant
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    intent: Mapped[str | None] = mapped_column(String(50))  # explain/hint/quiz/stuck/answer_attempt
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    session: Mapped["SCTeachSession"] = relationship(back_populates="messages")
+
+
 class AlumniConnection(Base):
     __tablename__ = "alumni_connections"
 

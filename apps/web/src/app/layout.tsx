@@ -5,9 +5,9 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
-  title: "Ask Seawolves",
+  title: "Seaport — SBU Digital Campus",
   description:
-    "Get answers about Stony Brook University admissions, tuition, housing, financial aid, and more — powered by official university sources.",
+    "Seaport is the all-in-one SBU platform: Ask Seawolf for university Q&A, SB-lumni for alumni networking, and StudyCoach for AI-powered Socratic tutoring.",
 };
 
 export default function RootLayout({

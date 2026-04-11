@@ -1,0 +1,194 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Brand ────────────────────────────────────────────── */
+:root {
+  --sbu-red:      #990000;
+  --sbu-red-dark: #7a0000;
+
+  /* Water semantic tokens — light mode */
+  --bg-primary:    #f5fbff;
+  --bg-secondary:  #eaf5ff;
+  --bg-chat:       #dff0fb;
+  --text-primary:  #0c2340;
+  --text-secondary:#1e5a87;
+  --text-muted:    #4d9abf;
+  --border:        #bae6fd;
+  --shadow:        0 1px 4px rgba(3, 105, 161, 0.10);
+  --accent:        #0369a1;
+  --accent-hover:  #0284c7;
+  --accent-glow:   rgba(14, 165, 233, 0.25);
+}
+
+.dark {
+  --bg-primary:    #020c1b;
+  --bg-secondary:  #071629;
+  --bg-chat:       #0a1f3a;
+  --text-primary:  #e0f2fe;
+  --text-secondary:#7dd3fc;
+  --text-muted:    #38bdf8;
+  --border:        #164e63;
+  --shadow:        0 1px 4px rgba(0, 0, 0, 0.45);
+  --accent:        #0ea5e9;
+  --accent-hover:  #38bdf8;
+  --accent-glow:   rgba(34, 211, 238, 0.2);
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* ── Water hero background ───────────────────────────── */
+.hero-bg {
+  background-size: 220% 220%;
+  background-image:
+    /* refraction lines — diagonal light through water */
+    repeating-linear-gradient(
+      -48deg,
+      transparent 0px,    transparent 55px,
+      rgba(186, 230, 253, 0.055) 55px, rgba(186, 230, 253, 0.055) 72px
+    ),
+    /* depth gradient — sky → aquamarine → deeper */
+    linear-gradient(
+      165deg,
+      #f0f9ff 0%,
+      #e0f2fe 22%,
+      #bae6fd 46%,
+      #7dd3fc 70%,
+      #38bdf8 100%
+    );
+  animation: waterFlow 14s ease infinite;
+}
+
+.dark .hero-bg {
+  background-image:
+    repeating-linear-gradient(
+      -48deg,
+      transparent 0px,    transparent 55px,
+      rgba(34, 211, 238, 0.025) 55px, rgba(34, 211, 238, 0.025) 72px
+    ),
+    linear-gradient(
+      165deg,
+      #020c1b 0%,
+      #071629 28%,
+      #0c2340 56%,
+      #0e4976 80%,
+      #164e63 100%
+    );
+}
+
+/* ── Glass card ──────────────────────────────────────── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(186, 230, 253, 0.6);
+  box-shadow: 0 4px 24px rgba(3, 105, 161, 0.06);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.glass-card:hover {
+  border-color: rgba(125, 211, 252, 0.6);
+  box-shadow: 0 4px 28px rgba(3, 105, 161, 0.1);
+}
+
+.dark .glass-card {
+  background: rgba(7, 22, 41, 0.72);
+  border: 1px solid rgba(22, 78, 99, 0.55);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Tide card — stronger accent border ──────────────── */
+.tide-card {
+  background: linear-gradient(135deg, rgba(14,165,233,0.04) 0%, rgba(125,211,252,0.06) 100%);
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  border-radius: 0.75rem;
+}
+
+/* ── Section accent bar ───────────────────────────────── */
+.accent-bar {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.75rem;
+}
+
+/* ── Wave divider ─────────────────────────────────────── */
+.wave-divider {
+  width: 100%;
+  height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 40'%3E%3Cpath d='M0,20 C200,0 400,40 600,20 C800,0 1000,40 1200,20 L1200,40 L0,40 Z' fill='%23bae6fd' opacity='0.3'/%3E%3C/svg%3E") repeat-x center / 600px 40px;
+  opacity: 0.5;
+}
+
+/* ── Water glow utilities ────────────────────────────── */
+.water-glow {
+  box-shadow:
+    0 0 0 3px var(--accent-glow),
+    0 0 22px var(--accent-glow);
+}
+
+.water-ring {
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* ── Shimmer button overlay ──────────────────────────── */
+.btn-water {
+  position: relative;
+  overflow: hidden;
+  background: var(--accent);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.btn-water::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 65%
+  );
+  transform: translateX(-100%) skewX(-15deg);
+}
+
+.btn-water:hover::before {
+  animation: shimmerSweep 0.65s ease forwards;
+}
+
+.btn-water:hover {
+  background: var(--accent-hover);
+}
+
+/* ── Bubble decoration ───────────────────────────────── */
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(125, 211, 252, 0.18);
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  animation: bubbleRise var(--dur, 4s) ease-in var(--delay, 0s) infinite;
+  pointer-events: none;
+}
+
+/* ── Animations (defined in tailwind.config too, but CSS fallback) ── */
+@keyframes waterFlow {
+  0%, 100% { background-position: 0% 60%; }
+  50%       { background-position: 100% 40%; }
+}
+
+@keyframes bubbleRise {
+  0%   { transform: translateY(0)    scale(1);   opacity: 0.5; }
+  100% { transform: translateY(-80px) scale(0.3); opacity: 0;   }
+}
+
+@keyframes shimmerSweep {
+  0%   { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(300%)  skewX(-15deg); }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+}

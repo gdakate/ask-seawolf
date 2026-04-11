@@ -51,7 +51,7 @@ services:
       JWT_SECRET: local-dev-secret-change-in-production
       ADMIN_DEFAULT_EMAIL: admin@stonybrook.edu
       ADMIN_DEFAULT_PASSWORD: admin123
-      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003
       ENVIRONMENT: development
       LOG_LEVEL: DEBUG
       POSTGRES_USER: sbu_user
@@ -106,6 +106,21 @@ services:
       - "3002:3002"
     volumes:
       - ./apps/alumni:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+
+  studycoach:
+    build:
+      context: ./apps/studycoach
+      dockerfile: Dockerfile
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./apps/studycoach:/app
       - /app/node_modules
       - /app/.next
     depends_on:
