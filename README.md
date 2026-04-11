@@ -3,11 +3,11 @@
 A unified AI platform for Stony Brook University, built for every stage of the Seawolf journey.
 
 ```
-http://localhost:3000   Seaport Portal       — unified landing page
-http://localhost:3001   Admin Dashboard      — content & evaluation tools
-http://localhost:3002   SB-lumni             — alumni matching & community
-http://localhost:3003   StudyCoach           — AI-powered Socratic tutor
-http://localhost:8000   FastAPI Backend      — shared API for all apps
+localhost:3000   Seaport Portal       — unified landing page for all apps
+localhost:3001   Admin Dashboard      — source mgmt, crawl jobs, eval, FAQ
+localhost:3002   SB-lumni             — alumni matching & community
+localhost:3003   StudyCoach           — AI-powered Socratic tutor
+localhost:8000   FastAPI Backend      — shared API for all apps
 ```
 
 ---
@@ -20,6 +20,16 @@ RAG-powered Q&A chatbot grounded in official SBU data.
 - Answers with source citations and confidence scores
 - Office routing when a human is the right answer
 - Conversation history, topic browsing, keyword search
+
+### Admin Dashboard (`:3001`)
+Content management and monitoring for platform operators.
+- Source management — add/edit/toggle the URLs the AI learns from, set authority scores and categories
+- Crawl & reindex jobs — trigger fresh data fetches and re-embeddings from the dashboard
+- Document and chunk inspection — browse every ingested page and its vector chunks
+- **FAQ overrides** — curate high-priority Q&A pairs that bypass RAG retrieval for guaranteed-accurate answers
+- Conversation review — read every chat session with confidence scores and citations
+- Feedback review — user ratings and comments to guide quality improvements
+- **Evaluation runner** — run structured test cases and see pass/fail rates + per-case detail
 
 ### SB-lumni (`:3002`)
 AI-powered alumni matching and community for Stony Brook graduates.
@@ -44,10 +54,10 @@ Socratic AI tutor built around a student's own course materials.
 
 ```
 ┌─────────────────────────────────────────────┐
-│  Seaport Portal           localhost:3000     │
-│  Admin Dashboard          localhost:3001     │
-│  SB-lumni                 localhost:3002     │
-│  StudyCoach               localhost:3003     │
+│  Seaport Portal     localhost:3000            │
+│  Admin Dashboard    localhost:3001            │
+│  SB-lumni           localhost:3002            │
+│  StudyCoach         localhost:3003            │
 │           (Next.js App Router, TailwindCSS)  │
 ├─────────────────────────────────────────────┤
 │  FastAPI Backend          localhost:8000     │
