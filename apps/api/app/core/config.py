@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
     # Claude 3.5 Haiku — fastest Claude on Bedrock, ideal for RAG Q&A
-    bedrock_model_id: str = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
+    bedrock_model_id: str = "us.anthropic.claude-3-haiku-20240307-v1:0"
     # Titan Embed Text v2 — 1024-dim output (see migration 006)
     bedrock_embedding_model_id: str = "amazon.titan-embed-text-v2:0"
 
