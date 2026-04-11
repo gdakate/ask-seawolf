@@ -1,6 +1,6 @@
 # Ask Seawolves — Stony Brook University AI Assistant Platform
 
-A production-ready, RAG-powered Q&A platform for Stony Brook University public information. Students, applicants, and visitors can ask questions and receive cited answers grounded in official university sources.
+A production-ready, RAG-powered Q&A platform for Stony Brook University public information, plus **SB-lumni** — an AI-powered alumni matching and community platform exclusively for SBU graduates.
 
 ## Architecture
 
@@ -12,11 +12,13 @@ A production-ready, RAG-powered Q&A platform for Stony Brook University public i
 │                   Admin Dashboard                     │
 │                   (Next.js :3001)                     │
 ├─────────────────────────────────────────────────────┤
+│               SB-lumni Alumni Platform                │
+│                   (Next.js :3002)                     │
+├─────────────────────────────────────────────────────┤
 │                    FastAPI Backend                     │
 │                     (Python :8000)                     │
 │  ┌──────────┬───────────┬────────────┬────────────┐  │
 │  │ Ingestion│  Indexing  │ Retrieval  │ Answering  │  │
-│  │ Service  │  Service   │  Service   │  Service   │  │
 │  └──────────┴───────────┴────────────┴────────────┘  │
 ├─────────────────────────────────────────────────────┤
 │  PostgreSQL + pgvector  │  Redis  │  S3/Local Storage │
@@ -41,12 +43,17 @@ cp .env.example .env
 
 # 3. Start all services (builds images, runs migrations, seeds demo data)
 docker compose up -d --build
+
+# 4. Seed alumni demo data (50+ profiles + posts + connections)
+docker compose exec api python seed_alumni.py
+docker compose exec api python seed_posts.py
 ```
 
 Once running:
-- Public web app:  http://localhost:3000
-- Admin dashboard: http://localhost:3001
-- API docs:        http://localhost:8000/docs
+- Public web app:    http://localhost:3000
+- Admin dashboard:  http://localhost:3001
+- SB-lumni:         http://localhost:3002
+- API docs:         http://localhost:8000/docs
 
 ### Load Real SBU Data (required for useful answers)
 
@@ -82,25 +89,37 @@ OPENAI_API_KEY=sk-...
 ```
 Then restart: `docker compose up -d api`
 
-### Default Admin Login
+### Default Login Accounts
+
+**Admin Dashboard** (http://localhost:3001)
 - Email: `admin@stonybrook.edu`
 - Password: `admin123`
+
+**SB-lumni Alumni Platform** (http://localhost:3002)
+- Email: `wolfie@stonybrook.edu`
+- Password: `12345678`
+
+> All 50+ seeded alumni accounts use password `demo1234`.
 
 ## Project Structure
 
 ```
 ├── apps/
-│   ├── web/          # Public Next.js frontend
+│   ├── web/          # Public Next.js frontend (Ask Wolfie)
 │   ├── admin/        # Admin Next.js dashboard
-│   └── api/          # FastAPI backend
+│   ├── alumni/       # SB-lumni Next.js frontend (:3002)
+│   └── api/          # FastAPI backend (shared)
 │       ├── app/
 │       │   ├── core/       # Config, database, auth
 │       │   ├── models/     # SQLAlchemy models
 │       │   ├── schemas/    # Pydantic schemas
 │       │   ├── routers/    # API endpoints
-│       │   └── services/   # Business logic (RAG pipeline)
-│       ├── migrations/     # Alembic migrations
-│       ├── seed/           # Demo seed data
+│       │   │   └── alumni.py  # Alumni platform routes
+│       │   └── services/   # Business logic (RAG + matching pipeline)
+│       ├── migrations/     # Alembic migrations (001–005)
+│       ├── seed/           # Ask Wolfie demo seed data
+│       ├── seed_alumni.py  # Alumni profiles + embeddings seed
+│       ├── seed_posts.py   # Alumni feed posts + connections seed
 │       └── tests/          # pytest tests
 ├── infra/terraform/        # AWS infrastructure
 ├── docs/                   # Documentation
@@ -132,7 +151,7 @@ The platform supports four AI provider modes:
 
 ## Key Features
 
-### Public App
+### Public App — Ask Wolfie
 - Chat interface with real-time Q&A
 - Source citations on every answer
 - Office routing for human help
@@ -144,8 +163,9 @@ The platform supports four AI provider modes:
 - Document and chunk inspection
 - Crawl/index job management
 - Conversation and feedback review
-- FAQ override management
-- Evaluation runner
+- FAQ override management with semantic clustering
+- Evaluation runner with per-case detail view
+- Live settings and analytics
 
 ### RAG Pipeline
 - Heading-aware document chunking
@@ -155,6 +175,19 @@ The platform supports four AI provider modes:
 - Office routing detection
 - Confidence scoring
 - Term-dependency warnings
+
+### SB-lumni — Alumni Platform
+- SBU-only registration (`@stonybrook.edu` / `@alumni.stonybrook.edu`)
+- 3-step onboarding with optional résumé upload (LLM-parsed)
+- **AI-powered People matching** — 2-stage pipeline:
+  - Stage 1: ANN retrieval via pgvector (cosine similarity on profile/skills/interests embeddings)
+  - Stage 2: Multi-signal reranking (major, career path, skills Jaccard, graduation proximity, open-to compatibility)
+  - MMR (Maximal Marginal Relevance) diversity selection, λ = 0.7
+  - Human-readable match reasons on every card
+- **Connect system** — connect/disconnect with any alumni, dedicated Connected tab
+- **Community Feed** — post with hashtags (#career, #research, #networking, …), comments, likes
+- Profile view & edit (own profile + public profiles of other alumni)
+- 50+ seeded alumni profiles across all majors, industries, degrees, and graduation years (2007–2025)
 
 ## Makefile Commands
 

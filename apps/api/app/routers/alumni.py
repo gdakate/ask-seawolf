@@ -11,7 +11,7 @@ from pydantic import BaseModel, EmailStr
 
 from app.core.database import get_db
 from app.core.auth import hash_password, verify_password, create_access_token
-from app.models.models import AlumniUser, AlumniProfile, AlumniPost, AlumniComment, AlumniLike
+from app.models.models import AlumniUser, AlumniProfile, AlumniPost, AlumniComment, AlumniLike, AlumniConnection
 from app.services.ai_providers import get_embedding_provider
 from app.core.config import get_settings
 
@@ -48,7 +48,7 @@ async def _get_current_alumni(token: str = Depends(lambda: None), db: AsyncSessi
 def _get_alumni_dep():
     from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
     from fastapi import Security
-    import jwt as pyjwt
+    from jose import jwt as jose_jwt, JWTError
     bearer = HTTPBearer(auto_error=False)
 
     async def dep(
@@ -58,7 +58,7 @@ def _get_alumni_dep():
         if not credentials:
             raise HTTPException(status_code=401, detail="Not authenticated")
         try:
-            payload = pyjwt.decode(
+            payload = jose_jwt.decode(
                 credentials.credentials,
                 settings.jwt_secret,
                 algorithms=[settings.jwt_algorithm],
@@ -196,7 +196,12 @@ async def _embed_and_store(profile: AlumniProfile, user_name: str, db: AsyncSess
 
 # ─── Matching algorithm ──────────────────────────────────────────────
 
-def _cosine(a: list[float], b: list[float]) -> float:
+def _cosine(a, b) -> float:
+    """Cosine similarity — safe for None, empty list, or numpy arrays."""
+    if a is None or b is None:
+        return 0.0
+    a = list(a) if not isinstance(a, list) else a
+    b = list(b) if not isinstance(b, list) else b
     if not a or not b:
         return 0.0
     dot = sum(x * y for x, y in zip(a, b))
@@ -288,7 +293,7 @@ def _mmr_select(
             for item in remaining:
                 relevance = item[0]
                 max_sim = max(
-                    _cosine(item[1].profile_embedding or [], s[1].profile_embedding or [])
+                    _cosine(item[1].profile_embedding, s[1].profile_embedding)
                     for s in selected
                 )
                 mmr = lambda_ * relevance - (1 - lambda_) * max_sim
@@ -405,21 +410,37 @@ async def get_matches(
     )).scalar_one_or_none()
     if not my_profile:
         raise HTTPException(status_code=404, detail="Complete your profile first")
-    if not my_profile.profile_embedding:
-        raise HTTPException(status_code=400, detail="Profile embeddings not ready")
 
-    # ── Stage 1: ANN retrieval (top-50 candidates via pgvector) ──────
-    embedding_str = f"[{','.join(str(x) for x in my_profile.profile_embedding)}]"
-    sql = text("""
-        SELECT ap.id
-        FROM alumni_profiles ap
-        WHERE ap.user_id != :user_id
-          AND ap.is_visible = true
-          AND ap.profile_embedding IS NOT NULL
-        ORDER BY ap.profile_embedding <=> CAST(:embedding AS vector)
-        LIMIT 50
-    """)
-    result = await db.execute(sql, {"user_id": str(user.id), "embedding": embedding_str})
+    # Generate embeddings on-the-fly if missing
+    if my_profile.profile_embedding is None:
+        await _embed_and_store(my_profile, user.name, db)
+        await db.commit()
+
+    # ── Stage 1: ANN retrieval (top-50 via pgvector) or full scan ────
+    has_embedding = my_profile.profile_embedding is not None
+    if has_embedding:
+        embedding_str = f"[{','.join(str(x) for x in my_profile.profile_embedding)}]"
+        sql = text("""
+            SELECT ap.id
+            FROM alumni_profiles ap
+            WHERE ap.user_id != :user_id
+              AND ap.is_visible = true
+            ORDER BY
+              CASE WHEN ap.profile_embedding IS NOT NULL
+                   THEN ap.profile_embedding <=> CAST(:embedding AS vector)
+                   ELSE 1.0
+              END
+            LIMIT 50
+        """)
+        result = await db.execute(sql, {"user_id": str(user.id), "embedding": embedding_str})
+    else:
+        sql = text("""
+            SELECT ap.id FROM alumni_profiles ap
+            WHERE ap.user_id != :user_id AND ap.is_visible = true
+            LIMIT 50
+        """)
+        result = await db.execute(sql, {"user_id": str(user.id)})
+
     candidate_ids = [row[0] for row in result.fetchall()]
 
     if not candidate_ids:
@@ -656,3 +677,84 @@ async def toggle_like(
         db.add(AlumniLike(post_id=post_id, user_id=user.id))
         post.likes_count = (post.likes_count or 0) + 1
         return {"liked": True, "likes_count": post.likes_count}
+
+
+# ─── Connections ─────────────────────────────────────────────────────
+
+@router.post("/connect/{target_user_id}")
+async def connect(
+    target_user_id: uuid.UUID,
+    user: AlumniUser = Depends(get_current_alumni),
+    db: AsyncSession = Depends(get_db),
+):
+    if target_user_id == user.id:
+        raise HTTPException(status_code=400, detail="Cannot connect with yourself")
+    target = (await db.execute(select(AlumniUser).where(AlumniUser.id == target_user_id))).scalar_one_or_none()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+    existing = (await db.execute(
+        select(AlumniConnection).where(
+            AlumniConnection.requester_id == user.id,
+            AlumniConnection.target_id == target_user_id,
+        )
+    )).scalar_one_or_none()
+    if existing:
+        await db.delete(existing)
+        await db.commit()
+        return {"connected": False}
+    db.add(AlumniConnection(requester_id=user.id, target_id=target_user_id))
+    await db.commit()
+    return {"connected": True}
+
+
+@router.get("/connections")
+async def get_connections(
+    user: AlumniUser = Depends(get_current_alumni),
+    db: AsyncSession = Depends(get_db),
+):
+    """Returns IDs of alumni this user has connected with (both directions)."""
+    sent = (await db.execute(
+        select(AlumniConnection.target_id).where(AlumniConnection.requester_id == user.id)
+    )).scalars().all()
+    received = (await db.execute(
+        select(AlumniConnection.requester_id).where(AlumniConnection.target_id == user.id)
+    )).scalars().all()
+    all_ids = list(set([str(i) for i in sent] + [str(i) for i in received]))
+
+    if not all_ids:
+        return []
+
+    uuid_ids = [uuid.UUID(i) for i in all_ids]
+    rows = (await db.execute(
+        select(AlumniProfile, AlumniUser)
+        .join(AlumniUser, AlumniUser.id == AlumniProfile.user_id)
+        .where(AlumniProfile.user_id.in_(uuid_ids))
+    )).all()
+
+    return [
+        {
+            "id": str(p.id), "user_id": str(p.user_id),
+            "name": u.name, "email": u.email,
+            "major": p.major, "degree": p.degree,
+            "graduation_year": p.graduation_year, "is_international": p.is_international,
+            "current_company": p.current_company, "job_title": p.job_title,
+            "industry": p.industry, "location": p.location,
+            "skills": p.skills or [], "interests": p.interests or [],
+            "open_to": p.open_to or [], "linkedin_url": p.linkedin_url,
+            "bio": p.bio, "is_visible": p.is_visible,
+            "created_at": p.created_at.isoformat() if p.created_at else "",
+        }
+        for p, u in rows
+    ]
+
+
+@router.get("/connections/ids")
+async def get_connection_ids(
+    user: AlumniUser = Depends(get_current_alumni),
+    db: AsyncSession = Depends(get_db),
+):
+    """Returns set of user IDs the current user is connected with."""
+    sent = (await db.execute(
+        select(AlumniConnection.target_id).where(AlumniConnection.requester_id == user.id)
+    )).scalars().all()
+    return {"ids": [str(i) for i in sent]}

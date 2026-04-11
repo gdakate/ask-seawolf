@@ -138,6 +138,12 @@ export const addComment = (postId: string, content: string) =>
 export const toggleLike = (postId: string) =>
   apiFetch<{ liked: boolean; likes_count: number }>(`/api/alumni/feed/${postId}/like`, { method: "POST" });
 
+// ─── Connections ──────────────────────────────────────────────────
+export const toggleConnect = (targetUserId: string) =>
+  apiFetch<{ connected: boolean }>(`/api/alumni/connect/${targetUserId}`, { method: "POST" });
+export const getConnections = () => apiFetch<Profile[]>("/api/alumni/connections");
+export const getConnectionIds = () => apiFetch<{ ids: string[] }>("/api/alumni/connections/ids");
+
 // ─── Resume ───────────────────────────────────────────────────────
 export async function parseResume(file: File): Promise<{ extracted: Partial<Profile>; raw_text_preview: string }> {
   const token = getToken();

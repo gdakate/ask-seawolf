@@ -2,7 +2,7 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import (
-    String, Text, Integer, Float, Boolean, DateTime, ForeignKey, Index, Enum as SAEnum, JSON
+    String, Text, Integer, Float, Boolean, DateTime, ForeignKey, Index, Enum as SAEnum, JSON, UniqueConstraint
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
@@ -449,4 +449,19 @@ class AlumniLike(Base):
 
     __table_args__ = (
         Index("ix_alumni_likes_post_user", "post_id", "user_id", unique=True),
+    )
+
+
+class AlumniConnection(Base):
+    __tablename__ = "alumni_connections"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    requester_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("alumni_users.id", ondelete="CASCADE"), nullable=False)
+    target_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("alumni_users.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    __table_args__ = (
+        Index("ix_alumni_connections_requester", "requester_id"),
+        Index("ix_alumni_connections_target", "target_id"),
+        UniqueConstraint("requester_id", "target_id", name="uq_alumni_connection"),
     )

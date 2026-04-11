@@ -148,7 +148,7 @@ export default function FeedPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showCompose, setShowCompose] = useState(false);
 
-  const { data: posts, isLoading } = useQuery({ queryKey: ["feed"], queryFn: getFeed, enabled: isLoggedIn });
+  const { data: posts, isLoading } = useQuery({ queryKey: ["feed"], queryFn: () => getFeed(), enabled: isLoggedIn });
 
   const postMut = useMutation({
     mutationFn: () => createPost(content, selectedTags),

@@ -4,9 +4,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
 const NAV = [
-  { href: "/matches", label: "Matches" },
-  { href: "/feed",    label: "Community" },
-  { href: "/profile", label: "My Profile" },
+  { href: "/feed",    label: "Feed",    icon: "📋" },
+  { href: "/people",  label: "People",  icon: "🧭" },
+  { href: "/profile", label: "Profile", icon: "🪪" },
 ];
 
 export function Header() {
@@ -14,35 +14,46 @@ export function Header() {
   const router = useRouter();
   const { isLoggedIn, name, logout } = useAuth();
 
+  const isApp = isLoggedIn && !["/", "/login", "/onboarding"].includes(pathname);
+
   return (
-    <header className="sticky top-0 z-50 bg-[var(--bg-primary)]/90 backdrop-blur-md border-b border-[var(--border)]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white font-bold text-xs">SB</div>
-          <span className="font-display font-semibold text-[var(--text-primary)] text-sm">
-            Seawolf <span className="text-[var(--accent)]">Alumni</span>
+    <header className="sticky top-0 z-50 bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border)]">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        {/* Logo */}
+        <Link href={isLoggedIn ? "/feed" : "/"} className="flex items-center gap-2 flex-shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--accent)] to-sky-400 flex items-center justify-center shadow-sm">
+            <span className="text-white font-black text-[11px] leading-none tracking-tight">SBL</span>
+          </div>
+          <span className="font-display font-bold text-[var(--text-primary)] text-base">
+            SB<span className="text-[var(--accent)]">-lumni</span>
           </span>
         </Link>
 
+        {/* App nav (logged in) */}
         {isLoggedIn && (
-          <nav className="hidden sm:flex items-center gap-1">
-            {NAV.map((item) => (
-              <Link key={item.href} href={item.href}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  pathname.startsWith(item.href)
-                    ? "bg-[var(--accent)]/10 text-[var(--accent)] font-medium"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
-                }`}>
-                {item.label}
-              </Link>
-            ))}
+          <nav className="flex items-center gap-1">
+            {NAV.map((item) => {
+              const active = pathname.startsWith(item.href);
+              return (
+                <Link key={item.href} href={item.href}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    active
+                      ? "bg-[var(--accent)]/12 text-[var(--accent)]"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                  }`}>
+                  <span className="text-base leading-none">{item.icon}</span>
+                  <span className="hidden sm:block">{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
         )}
 
-        <div className="flex items-center gap-2">
+        {/* Right: name + sign out */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           {isLoggedIn ? (
             <>
-              <span className="text-xs text-[var(--text-muted)] hidden sm:block">{name}</span>
+              <span className="text-xs text-[var(--text-muted)] hidden md:block truncate max-w-[120px]">{name}</span>
               <button onClick={() => { logout(); router.push("/"); }}
                 className="text-xs px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
                 Sign out
@@ -50,7 +61,7 @@ export function Header() {
             </>
           ) : (
             <Link href="/login"
-              className="text-sm px-4 py-1.5 rounded-lg bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] transition-colors font-medium">
+              className="text-sm px-4 py-1.5 rounded-lg bg-[var(--accent)] text-white hover:opacity-90 transition-opacity font-medium">
               Sign in
             </Link>
           )}

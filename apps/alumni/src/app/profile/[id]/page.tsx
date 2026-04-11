@@ -22,8 +22,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10">
-      <Link href="/matches" className="text-sm text-[var(--text-muted)] hover:text-[var(--accent)] mb-6 inline-block">
-        ← Back to matches
+      <Link href="/people" className="text-sm text-[var(--text-muted)] hover:text-[var(--accent)] mb-6 inline-block">
+        ← Back to people
       </Link>
 
       <div className="space-y-4">
