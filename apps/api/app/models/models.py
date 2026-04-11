@@ -325,3 +325,128 @@ class AuditLog(Base):
     __table_args__ = (
         Index("ix_audit_logs_created_at", "created_at"),
     )
+
+
+# ─── Alumni Platform ──────────────────────────────────────────────────
+
+class AlumniDegree(str, enum.Enum):
+    BS = "bs"
+    BA = "ba"
+    MS = "ms"
+    MA = "ma"
+    PHD = "phd"
+    MBA = "mba"
+    OTHER = "other"
+
+
+class AlumniUser(Base):
+    __tablename__ = "alumni_users"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    profile: Mapped["AlumniProfile | None"] = relationship(back_populates="user", uselist=False)
+
+
+class AlumniProfile(Base):
+    __tablename__ = "alumni_profiles"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("alumni_users.id"), unique=True, nullable=False)
+
+    # Academic background
+    major: Mapped[str] = mapped_column(String(255), nullable=False)
+    degree: Mapped[str] = mapped_column(String(20), nullable=False)  # AlumniDegree
+    graduation_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    is_international: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Career
+    current_company: Mapped[str | None] = mapped_column(String(255))
+    job_title: Mapped[str | None] = mapped_column(String(255))
+    industry: Mapped[str | None] = mapped_column(String(255))
+
+    # Location
+    location: Mapped[str | None] = mapped_column(String(255))
+
+    # Skills & interests (stored as JSON arrays)
+    skills: Mapped[list] = mapped_column(JSON, default=list)
+    interests: Mapped[list] = mapped_column(JSON, default=list)
+    open_to: Mapped[list] = mapped_column(JSON, default=list)
+
+    # Contact
+    linkedin_url: Mapped[str | None] = mapped_column(String(500))
+    bio: Mapped[str | None] = mapped_column(Text)
+
+    # Visibility
+    is_visible: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Embeddings for 2-stage matching (stored as vectors)
+    profile_embedding: Mapped[list | None] = mapped_column(Vector(384))
+    skills_embedding: Mapped[list | None] = mapped_column(Vector(384))
+    interests_embedding: Mapped[list | None] = mapped_column(Vector(384))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    user: Mapped["AlumniUser"] = relationship(back_populates="profile")
+    posts: Mapped[list["AlumniPost"]] = relationship(back_populates="author", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_alumni_profiles_major", "major"),
+        Index("ix_alumni_profiles_graduation_year", "graduation_year"),
+    )
+
+
+class AlumniPost(Base):
+    __tablename__ = "alumni_posts"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("alumni_profiles.id"), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    tags: Mapped[list] = mapped_column(JSON, default=list)
+    likes_count: Mapped[int] = mapped_column(Integer, default=0)
+    comments_count: Mapped[int] = mapped_column(Integer, default=0)
+    is_pinned: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    author: Mapped["AlumniProfile"] = relationship(back_populates="posts")
+    comments: Mapped[list["AlumniComment"]] = relationship(back_populates="post", cascade="all, delete-orphan")
+    likes: Mapped[list["AlumniLike"]] = relationship(back_populates="post", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        Index("ix_alumni_posts_created_at", "created_at"),
+    )
+
+
+class AlumniComment(Base):
+    __tablename__ = "alumni_comments"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    post_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("alumni_posts.id"), nullable=False)
+    author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("alumni_profiles.id"), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    post: Mapped["AlumniPost"] = relationship(back_populates="comments")
+    author: Mapped["AlumniProfile"] = relationship()
+
+
+class AlumniLike(Base):
+    __tablename__ = "alumni_likes"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=new_uuid)
+    post_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("alumni_posts.id"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("alumni_users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    post: Mapped["AlumniPost"] = relationship(back_populates="likes")
+
+    __table_args__ = (
+        Index("ix_alumni_likes_post_user", "post_id", "user_id", unique=True),
+    )
