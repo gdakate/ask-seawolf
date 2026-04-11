@@ -147,6 +147,17 @@ def _detect_category_hints(query: str) -> list[str]:
     return []
 
 
+import re as _re
+
+def _looks_like_person_name(query: str) -> bool:
+    """Return True if query looks like a person's name (e.g. 'Tuhin Chakrabarty')."""
+    words = query.strip().split()
+    if len(words) < 2 or len(words) > 5:
+        return False
+    # All words start with uppercase and are alpha-only
+    return all(_re.match(r'^[A-Z][a-zA-Z\-\']+$', w) for w in words)
+
+
 async def retrieve_chunks(
     db: AsyncSession,
     query: str,
@@ -214,6 +225,20 @@ async def retrieve_chunks(
     chunks.sort(key=lambda c: c["score"], reverse=True)
     chunks = chunks[:top_k]
 
+    # ── Always merge keyword results for person-name queries ──────────
+    # Vector search is poor at exact name matching; keyword search is reliable.
+    if _looks_like_person_name(query):
+        keyword_chunks = await _keyword_search(db, query, top_k)
+        # Merge: add keyword results not already present by chunk_id
+        existing_ids = {c["chunk_id"] for c in chunks}
+        for kc in keyword_chunks:
+            if kc["chunk_id"] not in existing_ids:
+                kc["score"] = 0.9  # high score so name matches surface first
+                chunks.append(kc)
+                existing_ids.add(kc["chunk_id"])
+        chunks.sort(key=lambda c: c["score"], reverse=True)
+        chunks = chunks[:top_k]
+
     # ── Fallback to keyword search if nothing retrieved ────────────────
     if not chunks:
         chunks = await _keyword_search(db, query, top_k)
@@ -222,22 +247,41 @@ async def retrieve_chunks(
 
 
 async def _keyword_search(db: AsyncSession, query: str, top_k: int) -> list[dict]:
-    """Simple keyword-based fallback search."""
-    search_term = f"%{query.lower()}%"
+    """Keyword-based search. For multi-word queries tries exact phrase first, then all-words."""
+    from sqlalchemy import and_, or_
+
+    base_filter = and_(
+        Document.status == "indexed",
+        Document.is_archived == False,
+        Source.is_active == True,
+    )
+
+    # Try exact phrase match first
     stmt = (
         select(Chunk, Document, Source)
         .join(Document, Chunk.document_id == Document.id)
         .join(Source, Document.source_id == Source.id)
-        .where(
-            Document.status == "indexed",
-            Document.is_archived == False,
-            Source.is_active == True,
-            func.lower(Chunk.content).contains(search_term),
-        )
+        .where(base_filter, func.lower(Chunk.content).contains(query.lower()))
         .limit(top_k)
     )
     result = await db.execute(stmt)
     rows = result.all()
+
+    # If exact phrase returns nothing, fall back to all-words-present match
+    if not rows:
+        words = [w for w in query.lower().split() if len(w) > 2]
+        if words:
+            word_filters = [func.lower(Chunk.content).contains(w) for w in words]
+            stmt = (
+                select(Chunk, Document, Source)
+                .join(Document, Chunk.document_id == Document.id)
+                .join(Source, Document.source_id == Source.id)
+                .where(base_filter, and_(*word_filters))
+                .limit(top_k)
+            )
+            result = await db.execute(stmt)
+            rows = result.all()
+
     return [
         {
             "chunk_id": str(chunk.id),
