@@ -5,15 +5,16 @@ import { usePathname } from "next/navigation";
 import { clearToken } from "@/lib/api";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: "📊" },
-  { href: "/sources", label: "Sources", icon: "🌐" },
-  { href: "/documents", label: "Documents", icon: "📄" },
-  { href: "/chunks", label: "Chunks", icon: "🧩" },
-  { href: "/faqs", label: "FAQs", icon: "❓" },
-  { href: "/conversations", label: "Conversations", icon: "💬" },
-  { href: "/feedback", label: "Feedback", icon: "⭐" },
-  { href: "/evaluations", label: "Evaluations", icon: "🧪" },
-  { href: "/settings", label: "Settings", icon: "⚙️" },
+  { href: "/dashboard",   label: "Dashboard",     icon: "📊" },
+  { href: "/analytics",   label: "Analytics",     icon: "📈" },
+  { href: "/sources",     label: "Sources",        icon: "🌐" },
+  { href: "/documents",   label: "Documents",      icon: "📄" },
+  { href: "/chunks",      label: "Chunks",         icon: "🧩" },
+  { href: "/faqs",        label: "FAQs",           icon: "❓" },
+  { href: "/conversations",label: "Conversations", icon: "💬" },
+  { href: "/feedback",    label: "Feedback",       icon: "⭐" },
+  { href: "/evaluations", label: "Evaluations",    icon: "🧪" },
+  { href: "/settings",    label: "Settings",       icon: "⚙️" },
 ];
 
 export function Sidebar() {

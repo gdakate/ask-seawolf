@@ -92,6 +92,14 @@ export const createFaq = (data: any) => adminFetch("/api/admin/faqs", { method: 
 export const updateFaq = (id: string, data: any) => adminFetch(`/api/admin/faqs/${id}`, { method: "PUT", body: JSON.stringify(data) });
 export const deleteFaq = (id: string) => adminFetch(`/api/admin/faqs/${id}`, { method: "DELETE" });
 
+// Analytics
+export const getAnalytics = () => adminFetch<any>("/api/admin/analytics");
+export const getFaqSuggestions = () => adminFetch<any[]>("/api/admin/faq-suggestions");
+
 // Evaluations
 export const getEvaluations = () => adminFetch<any[]>("/api/admin/evaluations");
+export const getEvaluationCases = (runId: string) => adminFetch<any[]>(`/api/admin/evaluations/${runId}/cases`);
 export const runEvaluation = (name?: string) => adminFetch("/api/admin/evaluations/run" + (name ? `?name=${name}` : ""), { method: "POST" });
+
+// Settings
+export const getAdminSettings = () => adminFetch<any>("/api/admin/settings");

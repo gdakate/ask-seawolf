@@ -132,9 +132,15 @@ function ChatContent() {
         )}
 
         {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+          <div key={msg.id} className={`flex items-end gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+            {/* Buddy avatar for assistant */}
+            {msg.role === "assistant" && (
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-water-sky dark:bg-water-abyss border border-water-shallow/60 flex items-center justify-center text-base shadow-sm">
+                🐺
+              </div>
+            )}
             <div
-              className={`max-w-[85%] ${
+              className={`max-w-[82%] ${
                 msg.role === "user"
                   /* user bubble: deep ocean blue */
                   ? "bg-[var(--accent)] text-white rounded-2xl rounded-br-md px-4 py-3 shadow-[0_2px_12px_var(--accent-glow)]"
