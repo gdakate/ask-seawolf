@@ -23,8 +23,14 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4o"
     openai_embedding_model: str = "text-embedding-3-small"
+
+    # AWS / Bedrock
     aws_region: str = "us-east-1"
-    bedrock_model_id: str = "anthropic.claude-3-sonnet-20240229-v1:0"
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    # Claude 3.5 Haiku — fastest Claude on Bedrock, ideal for RAG Q&A
+    bedrock_model_id: str = "anthropic.claude-3-5-haiku-20241022-v1:0"
+    # Titan Embed Text v2 — 1024-dim output (see migration 006)
     bedrock_embedding_model_id: str = "amazon.titan-embed-text-v2:0"
 
     # Local AI — no API key required (Ollama LLM + fastembed embeddings)
@@ -46,8 +52,8 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
 
-    # Embedding dimensions
-    embedding_dimensions: int = 384
+    # Embedding dimensions — 384 for local fastembed, 1024 for Bedrock Titan v2
+    embedding_dimensions: int = 1024
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

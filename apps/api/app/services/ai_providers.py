@@ -246,26 +246,46 @@ class OllamaLLMProvider(LLMProvider):
             return f"Ollama error: {str(e)}"
 
 
-# ─── Bedrock Provider (stub, ready for integration) ─────────────────
+# ─── Bedrock Providers ───────────────────────────────────────────────
 
 class BedrockEmbeddingProvider(EmbeddingProvider):
+    """
+    Amazon Titan Embed Text v2 — async-safe via run_in_executor.
+    Outputs 1024-dimensional embeddings (matches DB schema after migration 006).
+    """
+
     def __init__(self):
         import boto3
-        self.client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+        session = boto3.Session(
+            aws_access_key_id=settings.aws_access_key_id or None,
+            aws_secret_access_key=settings.aws_secret_access_key or None,
+            region_name=settings.aws_region,
+        )
+        self.client = session.client("bedrock-runtime")
         self.model_id = settings.bedrock_embedding_model_id
 
-    async def embed(self, texts: list[str]) -> list[list[float]]:
+    def _embed_sync(self, texts: list[str]) -> list[list[float]]:
         import json
         results = []
         for text in texts:
+            body = json.dumps({
+                "inputText": text,
+                "outputEmbeddingLength": settings.embedding_dimensions,
+                "normalize": True,
+            })
             response = self.client.invoke_model(
                 modelId=self.model_id,
-                body=json.dumps({"inputText": text}),
+                body=body,
                 contentType="application/json",
+                accept="application/json",
             )
-            body = json.loads(response["body"].read())
-            results.append(body["embedding"])
+            results.append(json.loads(response["body"].read())["embedding"])
         return results
+
+    async def embed(self, texts: list[str]) -> list[list[float]]:
+        import asyncio
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._embed_sync, texts)
 
     async def embed_query(self, text: str) -> list[float]:
         result = await self.embed([text])
@@ -273,14 +293,24 @@ class BedrockEmbeddingProvider(EmbeddingProvider):
 
 
 class BedrockLLMProvider(LLMProvider):
+    """
+    Claude via Amazon Bedrock — async-safe via run_in_executor.
+    Defaults to claude-3-5-haiku for fast, low-latency responses.
+    """
+
     def __init__(self):
         import boto3
-        self.client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+        session = boto3.Session(
+            aws_access_key_id=settings.aws_access_key_id or None,
+            aws_secret_access_key=settings.aws_secret_access_key or None,
+            region_name=settings.aws_region,
+        )
+        self.client = session.client("bedrock-runtime")
         self.model_id = settings.bedrock_model_id
 
-    async def generate(self, prompt: str, system: str = "", max_tokens: int = 1024) -> str:
+    def _generate_sync(self, prompt: str, system: str, max_tokens: int) -> str:
         import json
-        body = {
+        body: dict = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": max_tokens,
             "temperature": 0.1,
@@ -289,10 +319,18 @@ class BedrockLLMProvider(LLMProvider):
         if system:
             body["system"] = system
         response = self.client.invoke_model(
-            modelId=self.model_id, body=json.dumps(body), contentType="application/json"
+            modelId=self.model_id,
+            body=json.dumps(body),
+            contentType="application/json",
+            accept="application/json",
         )
         result = json.loads(response["body"].read())
         return result["content"][0]["text"]
+
+    async def generate(self, prompt: str, system: str = "", max_tokens: int = 1024) -> str:
+        import asyncio
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._generate_sync, prompt, system, max_tokens)
 
 
 # ─── Factory ─────────────────────────────────────────────────────────

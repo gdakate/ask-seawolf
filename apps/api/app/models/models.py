@@ -133,7 +133,7 @@ class Chunk(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     heading: Mapped[str | None] = mapped_column(String(500))
     token_count: Mapped[int] = mapped_column(Integer, default=0)
-    embedding: Mapped[list | None] = mapped_column(Vector(384))
+    embedding: Mapped[list | None] = mapped_column(Vector(1024))
     metadata_: Mapped[dict | None] = mapped_column("metadata", JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
@@ -386,9 +386,9 @@ class AlumniProfile(Base):
     is_visible: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Embeddings for 2-stage matching (stored as vectors)
-    profile_embedding: Mapped[list | None] = mapped_column(Vector(384))
-    skills_embedding: Mapped[list | None] = mapped_column(Vector(384))
-    interests_embedding: Mapped[list | None] = mapped_column(Vector(384))
+    profile_embedding: Mapped[list | None] = mapped_column(Vector(1024))
+    skills_embedding: Mapped[list | None] = mapped_column(Vector(1024))
+    interests_embedding: Mapped[list | None] = mapped_column(Vector(1024))
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
