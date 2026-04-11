@@ -97,7 +97,8 @@ async def _keyword_search(db: AsyncSession, query: str, top_k: int) -> list[dict
 
 
 async def check_faq_match(db: AsyncSession, query: str) -> FAQEntry | None:
-    """Check if query matches a curated FAQ entry."""
+    """Check if query matches a curated FAQ entry. Tracks hit_count and last_used_at."""
+    from datetime import datetime, timezone
     search = f"%{query.lower()[:80]}%"
     stmt = (
         select(FAQEntry)
@@ -106,7 +107,11 @@ async def check_faq_match(db: AsyncSession, query: str) -> FAQEntry | None:
         .limit(1)
     )
     result = await db.execute(stmt)
-    return result.scalar_one_or_none()
+    faq = result.scalar_one_or_none()
+    if faq:
+        faq.hit_count = (faq.hit_count or 0) + 1
+        faq.last_used_at = datetime.now(timezone.utc)
+    return faq
 
 
 def build_citations(chunks: list[dict]) -> list[Citation]:

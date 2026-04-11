@@ -155,6 +155,8 @@ class FAQOut(BaseModel):
     office_key: Optional[str]
     is_active: bool
     priority: int
+    hit_count: int = 0
+    last_used_at: Optional[datetime] = None
     created_at: datetime
     model_config = {"from_attributes": True}
 
