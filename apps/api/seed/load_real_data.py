@@ -20,7 +20,7 @@ from app.core.database import async_session
 from app.models.models import Source, Document, Chunk, SourceCategory, DocumentStatus, ContentType
 
 DATA_FILE = Path(__file__).parent.parent / "data" / "documents_chunked.json"
-BATCH_SIZE = 64  # chunks to embed at once
+BATCH_SIZE = 20  # chunks per batch (kept small to avoid Bedrock throttling)
 
 
 def category_names_map() -> dict[str, str]:
@@ -104,16 +104,10 @@ def category_names_map() -> dict[str, str]:
     }
 
 
-def get_embedding_model():
-    from fastembed import TextEmbedding
-    from app.core.config import get_settings
-    settings = get_settings()
-    print(f"  Loading embedding model: {settings.local_embedding_model}")
-    return TextEmbedding(settings.local_embedding_model)
-
-
-def embed_batch(model, texts: list[str]) -> list[list[float]]:
-    return [emb.tolist() for emb in model.embed(texts)]
+async def embed_batch(texts: list[str]) -> list[list[float]]:
+    from app.services.ai_providers import get_embedding_provider
+    provider = get_embedding_provider()
+    return await provider.embed(texts)
 
 
 def safe_category(cat: str) -> SourceCategory:
@@ -147,8 +141,8 @@ async def load(db: AsyncSession, reload: bool = False):
         await db.flush()
         print("  Cleared all sources/documents/chunks.")
 
-    # Load embedding model
-    model = get_embedding_model()
+    from app.core.config import get_settings
+    print(f"  Using AI provider: {get_settings().ai_provider}")
 
     # Create one Source per category
     cat_map = category_names_map()
@@ -210,7 +204,7 @@ async def load(db: AsyncSession, reload: bool = False):
     for batch_start in range(0, total, BATCH_SIZE):
         batch = chunks_data[batch_start: batch_start + BATCH_SIZE]
         texts = [item["text"] for item in batch]
-        embeddings = embed_batch(model, texts)
+        embeddings = await embed_batch(texts)
 
         for item, embedding in zip(batch, embeddings):
             doc = documents[item["url"]]
