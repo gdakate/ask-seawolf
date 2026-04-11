@@ -81,10 +81,6 @@ def should_prune(doc: dict) -> tuple[bool, str]:
     category = doc.get("category", "")
     text     = doc.get("clean_text", "")
 
-    # ── departments: exclude entirely from this release ──────────────────────
-    if category == "departments":
-        return True, "departments excluded (MVP)"
-
     # ── academic_calendar ────────────────────────────────────────────────────
     if category == "academic_calendar":
         for pat in ACADEMIC_PRUNE_URL:

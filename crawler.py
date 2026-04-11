@@ -50,17 +50,147 @@ SEED_URLS = {
     ],
     "parking": [
         "https://www.stonybrook.edu/mobility-and-parking/transportation/",
+        "https://www.stonybrook.edu/mobility-and-parking/parking/",
     ],
     "clubs": [
         "https://www.stonybrook.edu/commcms/studentaffairs/sac/club_and_orgs/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/sac/",
+        "https://clublink.stonybrook.edu/",
     ],
     "departments": [
         "https://www.stonybrook.edu/experts/departments/",
     ],
+    # ── Learning Management & Student Portals ─────────────────────────────────
+    "brightspace": [
+        "https://it.stonybrook.edu/services/brightspace",
+        "https://it.stonybrook.edu/help/kb/getting-started-with-brightspace",
+        "https://it.stonybrook.edu/help/kb/brightspace-for-students",
+        "https://it.stonybrook.edu/help/kb/brightspace-for-faculty",
+        "https://brightspace.stonybrook.edu/",
+    ],
+    "solar": [
+        "https://it.stonybrook.edu/services/solar",
+        "https://it.stonybrook.edu/help/kb/solar",
+        "https://www.stonybrook.edu/commcms/registrar/registration/enrollfaq.php",
+        "https://www.stonybrook.edu/commcms/registrar/registration/",
+        "https://solar.stonybrook.edu/",
+    ],
+    # ── Admissions ────────────────────────────────────────────────────────────
+    "undergraduate_admissions": [
+        "https://www.stonybrook.edu/undergraduate-admissions/",
+        "https://www.stonybrook.edu/commcms/ugadmissions/",
+        "https://www.stonybrook.edu/undergraduate-admissions/apply/",
+        "https://www.stonybrook.edu/undergraduate-admissions/tuition-aid/",
+        "https://www.stonybrook.edu/undergraduate-admissions/academics/",
+        "https://www.stonybrook.edu/undergraduate-admissions/visit/",
+    ],
+    "graduate_admissions": [
+        "https://www.stonybrook.edu/graduate/",
+        "https://www.stonybrook.edu/commcms/grad/",
+        "https://www.stonybrook.edu/commcms/grad/admissions/",
+        "https://www.stonybrook.edu/commcms/grad/financial/",
+        "https://www.stonybrook.edu/commcms/grad/current-students/",
+        "https://www.stonybrook.edu/commcms/grad/programs/",
+    ],
+    # ── Student Health & Wellness ─────────────────────────────────────────────
+    "health_wellness": [
+        "https://www.stonybrook.edu/commcms/studentaffairs/health/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/health/services/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/health/insurance/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/counseling/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/counseling/services/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/wellness/",
+    ],
+    # ── Career & Professional Development ─────────────────────────────────────
+    "career_center": [
+        "https://www.stonybrook.edu/commcms/career-center/",
+        "https://www.stonybrook.edu/commcms/career-center/students/",
+        "https://www.stonybrook.edu/commcms/career-center/employers/",
+        "https://www.stonybrook.edu/commcms/career-center/events/",
+        "https://www.stonybrook.edu/commcms/career-center/resources/",
+    ],
+    # ── International Students ────────────────────────────────────────────────
+    "international_students": [
+        "https://www.stonybrook.edu/commcms/oiss/",
+        "https://www.stonybrook.edu/commcms/oiss/immigration/",
+        "https://www.stonybrook.edu/commcms/oiss/new-students/",
+        "https://www.stonybrook.edu/commcms/oiss/current-students/",
+        "https://www.stonybrook.edu/commcms/oiss/resources/",
+    ],
+    # ── Disability & Accessibility ────────────────────────────────────────────
+    "disability_support": [
+        "https://www.stonybrook.edu/commcms/dss/",
+        "https://www.stonybrook.edu/commcms/dss/students/",
+        "https://www.stonybrook.edu/commcms/dss/faculty/",
+        "https://www.stonybrook.edu/commcms/dss/accommodations/",
+    ],
+    # ── Academic Support ──────────────────────────────────────────────────────
+    "academic_support": [
+        "https://www.stonybrook.edu/commcms/academic-success/",
+        "https://www.stonybrook.edu/commcms/writingcenter/",
+        "https://www.stonybrook.edu/commcms/writingcenter/services/",
+        "https://www.stonybrook.edu/commcms/mathlearningcenter/",
+        "https://www.stonybrook.edu/commcms/tutoring/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/studentsupport/",
+        "https://www.stonybrook.edu/commcms/lisc/",
+    ],
+    # ── Campus Life ───────────────────────────────────────────────────────────
+    "campus_life": [
+        "https://www.stonybrook.edu/commcms/studentaffairs/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/campus-life/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/diversity/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/leadership/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/lgbtq/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/commuter/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/veterans/",
+    ],
+    # ── Athletics & Recreation ────────────────────────────────────────────────
+    "athletics_recreation": [
+        "https://www.stonybrook.edu/commcms/studentaffairs/recreation/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/recreation/facilities/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/recreation/programs/",
+        "https://goboldseawolves.com/",
+        "https://www.stonybrook.edu/athletics/",
+    ],
+    # ── Campus Map & Transportation ───────────────────────────────────────────
+    "campus_map_transit": [
+        "https://www.stonybrook.edu/commcms/maps/",
+        "https://www.stonybrook.edu/commcms/parking/",
+        "https://www.stonybrook.edu/mobility-and-parking/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/res/transportation/",
+    ],
+    # ── Safety & Emergency ────────────────────────────────────────────────────
+    "safety_emergency": [
+        "https://www.stonybrook.edu/commcms/police/",
+        "https://www.stonybrook.edu/commcms/emergency/",
+        "https://www.stonybrook.edu/commcms/studentaffairs/dos/",
+        "https://www.stonybrook.edu/commcms/titleix/",
+    ],
+    # ── Research & Graduate Resources ─────────────────────────────────────────
+    "research": [
+        "https://www.stonybrook.edu/research/",
+        "https://www.stonybrook.edu/commcms/research/",
+        "https://www.stonybrook.edu/commcms/ureca/",
+        "https://www.stonybrook.edu/commcms/ureca/opportunities/",
+    ],
+    # ── Commencement & Graduation ─────────────────────────────────────────────
+    "graduation": [
+        "https://www.stonybrook.edu/commcms/registrar/graduation/",
+        "https://www.stonybrook.edu/commcms/commencement/",
+        "https://www.stonybrook.edu/commcms/commencement/graduates/",
+    ],
 }
 
 # ── Config ────────────────────────────────────────────────────────────────────
-ALLOWED_DOMAINS = {"stonybrook.edu", "library.stonybrook.edu", "it.stonybrook.edu"}
+ALLOWED_DOMAINS = {
+    "stonybrook.edu",
+    "library.stonybrook.edu",
+    "it.stonybrook.edu",
+    "brightspace.stonybrook.edu",
+    "solar.stonybrook.edu",
+    "clublink.stonybrook.edu",
+    "goboldseawolves.com",
+}
 MAX_DEPTH       = 2        # seed(0) → children(1) → grandchildren(2)
 DELAY_SECONDS   = 0.3
 OUTPUT_FILE     = "sbu_crawl.json"
