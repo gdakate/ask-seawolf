@@ -142,7 +142,7 @@ async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
         )
 
     # ── Step 3: RAG pipeline (public_school_info) ─────────────────────
-    chunks = await retrieve_chunks(db, req.query, top_k=5)
+    chunks = await retrieve_chunks(db, req.query, top_k=10)
     citations = build_citations(chunks)
     answer, confidence = await generate_answer(req.query, chunks)
     office = await find_office_routing(db, req.query, chunks)
@@ -181,14 +181,45 @@ async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
 async def get_topics():
     """Return browsable topic categories."""
     topics = [
-        TopicOut(key="admissions", name="Admissions", description="Undergraduate and graduate admissions information", icon="GraduationCap"),
-        TopicOut(key="registrar", name="Registrar", description="Registration, transcripts, and academic records", icon="FileText"),
-        TopicOut(key="bursar", name="Tuition & Billing", description="Tuition rates, fees, and payment options", icon="DollarSign"),
-        TopicOut(key="financial_aid", name="Financial Aid", description="Scholarships, grants, loans, and work-study", icon="Wallet"),
-        TopicOut(key="housing", name="Housing", description="Campus residences and housing applications", icon="Home"),
-        TopicOut(key="dining", name="Dining", description="Meal plans, dining locations, and hours", icon="UtensilsCrossed"),
-        TopicOut(key="academics", name="Academics", description="Programs, policies, and academic resources", icon="BookOpen"),
-        TopicOut(key="student_affairs", name="Student Life", description="Clubs, activities, and campus services", icon="Users"),
+        # ── Core academics ────────────────────────────────────────────────
+        TopicOut(key="undergraduate_admissions", name="Undergraduate Admissions", description="Apply to SBU, deadlines, requirements, and scholarships", icon="GraduationCap"),
+        TopicOut(key="graduate_admissions",      name="Graduate Admissions",      description="Masters and PhD programs, applications, and funding", icon="GraduationCap"),
+        TopicOut(key="academic_calendar",        name="Academic Calendar",        description="Semester dates, registration windows, and exam schedules", icon="Calendar"),
+        TopicOut(key="solar",                    name="SOLAR & Registration",     description="Course registration, enrollment, and student records", icon="FileText"),
+        TopicOut(key="brightspace",              name="Brightspace LMS",          description="Online course platform, assignments, and grades", icon="Monitor"),
+        TopicOut(key="tuition_financial_aid",    name="Tuition & Financial Aid",  description="Tuition rates, fees, scholarships, grants, and loans", icon="DollarSign"),
+        TopicOut(key="graduation",               name="Graduation",               description="Graduation requirements, application, and commencement", icon="Award"),
+        # ── Faculty & departments ─────────────────────────────────────────
+        TopicOut(key="faculty",                  name="Faculty Directory",        description="Professors, researchers, and department contacts across all SBU departments", icon="Users"),
+        TopicOut(key="dept_computer_science",    name="Computer Science",         description="CS faculty, research, and graduate programs", icon="Code"),
+        TopicOut(key="dept_mathematics",         name="Mathematics",              description="Math faculty, courses, and research", icon="Calculator"),
+        TopicOut(key="dept_applied_math_stats",  name="Applied Math & Statistics","AMS faculty, programs, and research", icon="BarChart"),
+        TopicOut(key="dept_physics_astronomy",   name="Physics & Astronomy",      description="Physics faculty and research areas", icon="Star"),
+        TopicOut(key="dept_chemistry",           name="Chemistry",                description="Chemistry faculty and research", icon="Flask"),
+        TopicOut(key="dept_biology",             name="Biology",                  description="Biology faculty and life sciences research", icon="Leaf"),
+        TopicOut(key="dept_economics",           name="Economics",                description="Economics faculty and research", icon="TrendingUp"),
+        TopicOut(key="dept_business",            name="Business",                 description="College of Business faculty and programs", icon="Briefcase"),
+        TopicOut(key="dept_electrical_computer_engineering", name="Electrical & Computer Engineering", description="ECE faculty and research", icon="Zap"),
+        TopicOut(key="dept_mechanical_engineering", name="Mechanical Engineering","ME faculty and research", icon="Settings"),
+        TopicOut(key="dept_biomedical_engineering", name="Biomedical Engineering","BME faculty and research", icon="Activity"),
+        # ── Campus life ───────────────────────────────────────────────────
+        TopicOut(key="housing",                  name="Housing",                  description="Campus residences, applications, and room assignments", icon="Home"),
+        TopicOut(key="dining",                   name="Dining",                   description="Meal plans, dining locations, and hours", icon="UtensilsCrossed"),
+        TopicOut(key="clubs",                    name="Clubs & Organizations",    description="Student clubs, organizations, and campus activities", icon="Users"),
+        TopicOut(key="campus_life",              name="Campus Life",              description="Student life, diversity resources, and campus services", icon="MapPin"),
+        TopicOut(key="athletics_recreation",     name="Athletics & Recreation",   description="Sports, fitness facilities, and intramural activities", icon="Activity"),
+        TopicOut(key="parking",                  name="Parking & Transit",        description="Parking permits, commuter buses, and transportation", icon="Car"),
+        # ── Student services ──────────────────────────────────────────────
+        TopicOut(key="career_center",            name="Career Center",            description="Internships, jobs, resume help, and career fairs", icon="Briefcase"),
+        TopicOut(key="health_wellness",          name="Health & Wellness",        description="Student health, counseling, and mental health services", icon="Heart"),
+        TopicOut(key="international_students",   name="International Students",   description="OISS, visa support, and international student resources", icon="Globe"),
+        TopicOut(key="disability_support",       name="Disability Support",       description="DSS accommodations and accessibility services", icon="Shield"),
+        TopicOut(key="academic_support",         name="Academic Support",         description="Writing center, tutoring, and academic success resources", icon="BookOpen"),
+        TopicOut(key="research",                 name="Research",                 description="Undergraduate research, labs, and URECA program", icon="Search"),
+        TopicOut(key="safety_emergency",         name="Safety & Emergency",       description="University police, campus safety, and emergency contacts", icon="AlertTriangle"),
+        # ── IT & systems ──────────────────────────────────────────────────
+        TopicOut(key="it_help",                  name="IT Help",                  description="NetID, WiFi, software, and technical support", icon="Monitor"),
+        TopicOut(key="library",                  name="Library",                  description="Library resources, databases, and research help", icon="BookOpen"),
     ]
     return topics
 
