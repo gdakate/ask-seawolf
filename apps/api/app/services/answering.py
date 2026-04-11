@@ -251,10 +251,25 @@ def _build_context(chunks: list[dict]) -> str:
     return "\n".join(parts)
 
 
-def build_prompt(question: str, chunks: list[dict]) -> str:
+def _build_history_block(history: list[dict]) -> str:
+    lines = []
+    for turn in history:
+        role = "User" if turn["role"] == "user" else "Assistant"
+        lines.append(f"{role}: {turn['content']}")
+    return "\n".join(lines)
+
+
+def build_prompt(question: str, chunks: list[dict], history: list[dict] | None = None) -> str:
     """Public wrapper used by tests and external callers."""
     context = _build_context(chunks)
-    return ANSWER_PROMPT_TEMPLATE.format(context=context, question=question)
+    prompt = ANSWER_PROMPT_TEMPLATE.format(context=context, question=question)
+    if history:
+        history_block = _build_history_block(history)
+        prompt = (
+            f"[CONVERSATION HISTORY]\n{history_block}\n[/CONVERSATION HISTORY]\n\n"
+            + prompt
+        )
+    return prompt
 
 
 # ─── Main entry point ─────────────────────────────────────────────────
@@ -263,6 +278,7 @@ async def generate_answer(
     question: str,
     chunks: list[dict],
     intent: str = "public_school_info",
+    history: list[dict] | None = None,
 ) -> tuple[str, float]:
     """
     Generate a response based on pre-classified intent.
@@ -303,6 +319,12 @@ async def generate_answer(
 
     context = _build_context(chunks)
     prompt = ANSWER_PROMPT_TEMPLATE.format(context=context, question=question)
+    if history:
+        history_block = _build_history_block(history)
+        prompt = (
+            f"[CONVERSATION HISTORY]\n{history_block}\n[/CONVERSATION HISTORY]\n\n"
+            + prompt
+        )
     llm = get_llm_provider()
     answer = await llm.generate(prompt, system=SYSTEM_PROMPT)
 

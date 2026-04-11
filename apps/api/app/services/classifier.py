@@ -241,7 +241,7 @@ class ClassificationResult:
 
 # ─── Classifier ───────────────────────────────────────────────────────
 
-async def classify_query(query: str) -> ClassificationResult:
+async def classify_query(query: str, history: list[dict] | None = None) -> ClassificationResult:
     """
     Hybrid classifier: rule fast-path → LLM.
 
@@ -250,11 +250,16 @@ async def classify_query(query: str) -> ClassificationResult:
       - Meaningless / empty input
       - Emergency keywords
     Everything else goes through the LLM classifier.
+
+    history: list of {"role": "user"|"assistant", "content": str} in chronological order.
+    When provided, short/vague queries are resolved in context before classifying.
     """
     q_stripped = query.strip()
+    history = history or []
 
     # ── Fast path: no meaningful input ──────────────────────────────
-    if not q_stripped or FAST_NO_MEANING.match(q_stripped):
+    # Skip if there's history — "어디" after a parking question is meaningful
+    if not history and (not q_stripped or FAST_NO_MEANING.match(q_stripped)):
         return ClassificationResult(
             intent="no_meaningful_query",
             confidence=1.0,
@@ -263,7 +268,8 @@ async def classify_query(query: str) -> ClassificationResult:
         )
 
     # ── Fast path: greeting ──────────────────────────────────────────
-    if FAST_GREETING.match(q_stripped):
+    # Only skip if there's no prior conversation context
+    if not history and FAST_GREETING.match(q_stripped):
         return ClassificationResult(
             intent="greeting",
             confidence=1.0,
@@ -281,13 +287,29 @@ async def classify_query(query: str) -> ClassificationResult:
         )
 
     # ── LLM classifier ───────────────────────────────────────────────
-    return await _llm_classify(q_stripped)
+    return await _llm_classify(q_stripped, history)
 
 
-async def _llm_classify(query: str) -> ClassificationResult:
+async def _llm_classify(query: str, history: list[dict] | None = None) -> ClassificationResult:
     """Call the LLM with a structured classification prompt and parse JSON output."""
     llm = get_llm_provider()
-    prompt = f"{CLASSIFIER_FEW_SHOT}\n\nQ: \"{query}\""
+    history = history or []
+
+    # Prepend conversation history so the LLM can resolve short/vague follow-ups
+    if history:
+        history_lines = []
+        for turn in history:
+            role = "User" if turn["role"] == "user" else "Assistant"
+            history_lines.append(f"{role}: {turn['content']}")
+        history_block = "\n".join(history_lines)
+        prompt = (
+            f"{CLASSIFIER_FEW_SHOT}\n\n"
+            f"[CONVERSATION SO FAR]\n{history_block}\n[/CONVERSATION]\n\n"
+            f"Now classify the LATEST user message in the context of the conversation above.\n"
+            f"Q: \"{query}\""
+        )
+    else:
+        prompt = f"{CLASSIFIER_FEW_SHOT}\n\nQ: \"{query}\""
 
     try:
         raw = await llm.generate(

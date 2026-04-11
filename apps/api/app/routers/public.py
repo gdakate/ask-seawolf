@@ -78,8 +78,19 @@ async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
         db.add(session)
         await db.flush()
 
+    # ── Fetch conversation history (last 6 messages, chronological) ───
+    history_stmt = (
+        select(ChatMessage)
+        .where(ChatMessage.session_id == session.id)
+        .order_by(ChatMessage.created_at.desc())
+        .limit(6)
+    )
+    history_result = await db.execute(history_stmt)
+    history_rows = list(reversed(history_result.scalars().all()))
+    history = [{"role": row.role, "content": row.content} for row in history_rows]
+
     # ── Step 1: Classify intent (hybrid rule + LLM) ───────────────────
-    classification = await classify_query(req.query)
+    classification = await classify_query(req.query, history=history)
     intent = classification.intent
 
     # Intents that bypass retrieval entirely
@@ -93,7 +104,7 @@ async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
             answer = classification.clarification_question
             confidence = classification.confidence
         else:
-            answer, confidence = await generate_answer(req.query, [], intent=intent)
+            answer, confidence = await generate_answer(req.query, [], intent=intent, history=history)
 
         user_msg = ChatMessage(session_id=session.id, role="user", content=req.query)
         db.add(user_msg)
@@ -144,7 +155,7 @@ async def chat_query(req: ChatQueryRequest, db: AsyncSession = Depends(get_db)):
     # ── Step 3: RAG pipeline (public_school_info) ─────────────────────
     chunks = await retrieve_chunks(db, req.query, top_k=10)
     citations = build_citations(chunks)
-    answer, confidence = await generate_answer(req.query, chunks)
+    answer, confidence = await generate_answer(req.query, chunks, history=history)
     office = await find_office_routing(db, req.query, chunks)
     follow_ups = generate_follow_ups(req.query, chunks)
     warning = should_warn_term_dependent(chunks, req.query)
