@@ -25,20 +25,81 @@ BATCH_SIZE = 64  # chunks to embed at once
 
 def category_names_map() -> dict[str, str]:
     return {
-        "academic_calendar":  "Academic Calendar",
-        "academics":          "Academic Programs",
-        "admissions":         "Admissions",
-        "building_hours":     "Building Hours",
-        "clubs":              "Student Clubs & Organizations",
-        "dining":             "Dining Services",
-        "faq":                "SBU FAQ",
-        "housing":            "Campus Housing",
-        "it_help":            "IT Help & Services",
-        "library":            "University Libraries",
-        "parking":            "Parking & Transportation",
-        "registrar":          "Registrar",
-        "student_affairs":    "Student Affairs",
-        "tuition_financial_aid": "Tuition & Financial Aid",
+        "academic_calendar":        "Academic Calendar",
+        "academics":                "Academic Programs",
+        "admissions":               "Admissions",
+        "building_hours":           "Building Hours",
+        "clubs":                    "Student Clubs & Organizations",
+        "dining":                   "Dining Services",
+        "faq":                      "SBU FAQ",
+        "housing":                  "Campus Housing",
+        "it_help":                  "IT Help & Services",
+        "library":                  "University Libraries",
+        "parking":                  "Parking & Transportation",
+        "registrar":                "Registrar",
+        "student_affairs":          "Student Affairs",
+        "tuition_financial_aid":    "Tuition & Financial Aid",
+        # ── Faculty ──────────────────────────────────────────────────────────
+        "faculty":                  "Faculty & Staff Directory",
+        "dept_applied_math_stats":  "Dept: Applied Math & Statistics",
+        "dept_biochemistry":        "Dept: Biochemistry",
+        "dept_biology":             "Dept: Biology",
+        "dept_chemistry":           "Dept: Chemistry",
+        "dept_computer_science":    "Dept: Computer Science",
+        "dept_earth_space_sciences":"Dept: Earth & Space Sciences",
+        "dept_economics":           "Dept: Economics",
+        "dept_english":             "Dept: English",
+        "dept_history":             "Dept: History",
+        "dept_linguistics":         "Dept: Linguistics",
+        "dept_mathematics":         "Dept: Mathematics",
+        "dept_philosophy":          "Dept: Philosophy",
+        "dept_physics_astronomy":   "Dept: Physics & Astronomy",
+        "dept_political_science":   "Dept: Political Science",
+        "dept_psychology":          "Dept: Psychology",
+        "dept_sociology":           "Dept: Sociology",
+        "dept_womens_gender_studies":"Dept: Women's & Gender Studies",
+        "dept_africana_studies":    "Dept: Africana Studies",
+        "dept_hispanic_languages":  "Dept: Hispanic Languages",
+        "dept_european_languages":  "Dept: European Languages",
+        "dept_comparative_literature":"Dept: Comparative Literature",
+        "dept_asian_asian_american_studies":"Dept: Asian & Asian American Studies",
+        "dept_biomedical_engineering":"Dept: Biomedical Engineering",
+        "dept_chemical_engineering": "Dept: Chemical Engineering",
+        "dept_civil_engineering":    "Dept: Civil Engineering",
+        "dept_electrical_computer_engineering":"Dept: Electrical & Computer Engineering",
+        "dept_mechanical_engineering":"Dept: Mechanical Engineering",
+        "dept_materials_science":   "Dept: Materials Science",
+        "dept_technology_society":  "Dept: Technology & Society",
+        "dept_business":            "Dept: Business",
+        "dept_nursing":             "Dept: Nursing",
+        "dept_social_welfare":      "Dept: Social Welfare",
+        "dept_public_health":       "Dept: Public Health",
+        "dept_health_technology":   "Dept: Health Technology",
+        "dept_marine_atmospheric_sciences":"Dept: Marine & Atmospheric Sciences",
+        "dept_art":                 "Dept: Art",
+        "dept_music":               "Dept: Music",
+        "dept_theatre_arts":        "Dept: Theatre Arts",
+        "dept_education":           "Dept: Education",
+        "dept_information_systems": "Dept: Information Systems",
+        "dept_iacs":                "Dept: IACS",
+        "dept_ai_institute":        "Dept: AI Institute",
+        "faculty_directory":        "Faculty Directory",
+        # ── New categories ────────────────────────────────────────────────────
+        "brightspace":              "Brightspace LMS",
+        "solar":                    "SOLAR Student Portal",
+        "undergraduate_admissions": "Undergraduate Admissions",
+        "graduate_admissions":      "Graduate Admissions",
+        "health_wellness":          "Health & Wellness",
+        "career_center":            "Career Center",
+        "international_students":   "International Student Services",
+        "disability_support":       "Disability Support Services",
+        "academic_support":         "Academic Support",
+        "campus_life":              "Campus Life",
+        "athletics_recreation":     "Athletics & Recreation",
+        "campus_map_transit":       "Campus Map & Transit",
+        "safety_emergency":         "Safety & Emergency",
+        "research":                 "Research",
+        "graduation":               "Graduation & Commencement",
     }
 
 
@@ -78,18 +139,12 @@ async def load(db: AsyncSession, reload: bool = False):
         print("Real data already loaded. Skipping. (use --reload to force reload)")
         return
 
-    if existing and reload:
-        print("Reload requested — clearing existing crawled data...")
-        names = list(category_names_map().values())
-        result2 = await db.execute(select(Source).where(Source.name.in_(names)))
-        for src in result2.scalars().all():
-            # Delete documents and chunks belonging to this source first
-            docs_result = await db.execute(select(Document).where(Document.source_id == src.id))
-            for doc in docs_result.scalars().all():
-                await db.delete(doc)
-            await db.delete(src)
+    if reload:
+        print("Reload requested — truncating all data...")
+        from sqlalchemy import text
+        await db.execute(text("TRUNCATE TABLE chunks, documents, sources RESTART IDENTITY CASCADE"))
         await db.flush()
-        print("  Cleared old sources/documents/chunks.")
+        print("  Cleared all sources/documents/chunks.")
 
     # Load embedding model
     model = get_embedding_model()

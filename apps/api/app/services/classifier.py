@@ -80,7 +80,8 @@ Classify the user's message into EXACTLY ONE of these intents:
   public_school_info
       Questions about publicly available SBU information: admissions, tuition, fees, deadlines,
       programs, housing options, dining plans, financial aid policies, library hours, parking,
-      campus services, IT, academic calendar, clubs, etc. The answer exists on a public SBU webpage.
+      campus services, IT, academic calendar, clubs, faculty profiles, professor research interests,
+      department contacts, course offerings, etc. The answer exists on a public SBU webpage.
 
   private_account_specific
       Requires THIS specific user's personal account data. Includes paraphrases like:
@@ -188,6 +189,24 @@ Q: "how much is tuition if I'm a freshman from New York?"
 
 Q: "What clubs are available at SBU?"
 {"intent":"public_school_info","confidence":0.97,"reasoning":"Asking about publicly available student organization information.","clarification_question":null}
+
+Q: "Who is the chair of the Computer Science department?"
+{"intent":"public_school_info","confidence":0.97,"reasoning":"Asking about a publicly listed faculty/department leadership role at SBU.","clarification_question":null}
+
+Q: "What are Professor Leman Akoglu's research interests?"
+{"intent":"public_school_info","confidence":0.96,"reasoning":"Asking about a faculty member's publicly listed research profile.","clarification_question":null}
+
+Q: "Does SBU CS department have professors working on NLP?"
+{"intent":"public_school_info","confidence":0.95,"reasoning":"Asking about research areas covered by SBU faculty — publicly available information.","clarification_question":null}
+
+Q: "Who teaches graduate algorithms at SBU?"
+{"intent":"public_school_info","confidence":0.93,"reasoning":"Asking about faculty teaching assignments — publicly available course/faculty information.","clarification_question":null}
+
+Q: "What is the email for the math department?"
+{"intent":"public_school_info","confidence":0.97,"reasoning":"Asking for a publicly listed department contact.","clarification_question":null}
+
+Q: "How do I contact my advisor?"
+{"intent":"ambiguous_public","confidence":0.85,"reasoning":"Unclear which advisor or department — needs clarification.","clarification_question":"Which department or program is your advisor in? (e.g., CS, Business, Graduate School)"}
 
 Now classify the following query and respond with ONLY the JSON object:"""
 

@@ -283,6 +283,7 @@ class BedrockLLMProvider(LLMProvider):
         body = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": max_tokens,
+            "temperature": 0.1,
             "messages": [{"role": "user", "content": prompt}],
         }
         if system:

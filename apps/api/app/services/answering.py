@@ -11,7 +11,7 @@ This module handles:
 from app.services.ai_providers import get_llm_provider
 
 # ─── Confidence threshold for reliable source fallback ───────────────
-RELIABLE_SOURCE_THRESHOLD = 0.3
+RELIABLE_SOURCE_THRESHOLD = 0.38
 
 # ─── System prompt ────────────────────────────────────────────────────
 
@@ -20,11 +20,12 @@ SYSTEM_PROMPT = """You are Ask Seawolves, the official AI assistant for Stony Br
 CORE RULES:
 1. Answer ONLY from the [CONTEXT] block provided. Never use outside knowledge.
 2. Never invent deadlines, fees, phone numbers, emails, or policy details.
-3. Every substantive answer must include at least one source citation: [Source: <title> — <url>]
-4. If context is insufficient, say so and suggest contacting the relevant office.
-5. If information may vary by term or program, add a note.
+3. Every substantive answer must include at least one source citation using the URL from the context: [Source: <title> — <url>]
+4. If context is insufficient, say so clearly and suggest contacting the relevant office.
+5. If information may vary by academic term or program, add a brief note to verify with the relevant office.
 6. Be concise, accurate, and professional. Always respond in English.
-7. End every complete answer with ONE short follow-up prompt."""
+7. For faculty or professor questions, include their title, department, research interests, and contact info if available in the context.
+8. Do NOT add a follow-up prompt unless it naturally clarifies an ambiguous answer."""
 
 ANSWER_PROMPT_TEMPLATE = """[CONTEXT]
 {context}
@@ -32,11 +33,11 @@ ANSWER_PROMPT_TEMPLATE = """[CONTEXT]
 
 Question: {question}
 
-Answer based solely on the context above. Include source citations. If the context does not fully answer the question, acknowledge what is missing and suggest next steps. End with one short follow-up prompt."""
+Answer based solely on the context above. Cite sources using the exact URLs provided in the context. If the context does not fully answer the question, acknowledge what is missing and suggest the appropriate office or resource."""
 
 # ─── Canned responses ─────────────────────────────────────────────────
 
-GREETING_RESPONSE = """Hi! I'm Seawolf Ask, your guide to official Stony Brook University information.
+GREETING_RESPONSE = """Hi! I'm Ask Seawolves, your guide to official Stony Brook University information.
 
 I can help with admissions, tuition, housing, financial aid, registration, dining, IT services, and more.
 
@@ -144,7 +145,12 @@ def _build_private_refusal(question: str) -> str:
 def _build_context(chunks: list[dict]) -> str:
     parts = []
     for i, chunk in enumerate(chunks):
-        source_info = f"[Source {i+1}: {chunk['title']}]"
+        title = chunk.get("title", "SBU")
+        url = chunk.get("url", "")
+        source_info = f"[Source {i+1}: {title}"
+        if url:
+            source_info += f" — {url}"
+        source_info += "]"
         if chunk.get("office"):
             source_info += f" (Office: {chunk['office']})"
         parts.append(f"{source_info}\n{chunk['content']}\n")
