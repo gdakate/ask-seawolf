@@ -7,7 +7,7 @@ Create Date: 2026-04-11
 from alembic import op
 
 revision = "006"
-down_revision = "005"
+down_revision = "005_alumni_connections"
 branch_labels = None
 depends_on = None
 
