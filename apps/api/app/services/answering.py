@@ -8,6 +8,7 @@ This module handles:
   - public_no_reliable_source fallback when retrieval confidence is too low
 """
 
+import random
 from app.services.ai_providers import get_llm_provider
 
 # ─── Confidence threshold for reliable source fallback ───────────────
@@ -37,41 +38,115 @@ Answer based solely on the context above. Cite sources using the exact URLs prov
 
 # ─── Canned responses ─────────────────────────────────────────────────
 
-GREETING_RESPONSE = """Hi! I'm Ask Seawolves, your guide to official Stony Brook University information.
+GREETING_RESPONSES = [
+    """Hi! I'm Ask Seawolves, your AI guide to Stony Brook University. 🐺
 
-I can help with admissions, tuition, housing, financial aid, registration, dining, IT services, and more.
+I can help you find information about:
+• **Admissions** — requirements, deadlines, how to apply
+• **Tuition & Financial Aid** — costs, scholarships, FAFSA
+• **Housing & Dining** — residence halls, meal plans
+• **Registration** — SOLAR, Brightspace, academic calendar
+• **Faculty & Departments** — professors, research, contact info
+• **Campus Life** — clubs, career center, health services, and more
 
-Here are some things you can ask me:
-• "What is the tuition for in-state undergraduate students?"
-• "When does spring 2026 registration open?"
-• "How do I apply for on-campus housing?"
-• "What dining plans are available for freshmen?"
+What would you like to know?""",
 
-What would you like to know?"""
+    """Hello! Welcome to Ask Seawolves — your 24/7 guide to official SBU information.
 
-NO_MEANING_RESPONSE = """No worries — whenever you're ready, feel free to ask anything about Stony Brook University.
+Whether you're a prospective student, current Seawolf, or just curious about SBU, I'm here to help. Try asking me:
+• "Who are the CS faculty working on AI?"
+• "What are the graduate admissions requirements?"
+• "How do I use Brightspace?"
+• "What dining plans are available?"
+
+What's on your mind?""",
+
+    """Hey there! I'm Ask Seawolves, Stony Brook University's AI assistant.
+
+I have information on **faculty, admissions, tuition, housing, dining, registration, campus services, research, and much more** — all sourced directly from official SBU pages.
+
+Go ahead and ask me anything about SBU!""",
+
+    """Hi and welcome! I'm Ask Seawolves, here to help you navigate Stony Brook University.
+
+Some popular topics:
+• Faculty & department contacts
+• Tuition, fees, and financial aid
+• Course registration and Brightspace
+• On-campus housing and dining
+• Career center, clubs, and student life
+
+What can I help you with today?""",
+]
+
+THANKS_RESPONSES = [
+    "You're welcome! Feel free to ask if you have any other questions about SBU.",
+    "Happy to help! Is there anything else you'd like to know about Stony Brook?",
+    "Glad I could help! Don't hesitate to ask if you need more SBU information.",
+    "Of course! Let me know if there's anything else I can look up for you.",
+]
+
+FAREWELL_RESPONSES = [
+    "Take care! Come back anytime you have questions about SBU. Go Seawolves! 🐺",
+    "Goodbye! Best of luck with your studies. Feel free to return whenever you need help.",
+    "See you later! Don't forget — I'm available 24/7 for any SBU questions.",
+    "Take care! Wishing you a great semester at Stony Brook.",
+]
+
+NO_MEANING_RESPONSES = [
+    """No worries — take your time! Whenever you're ready, feel free to ask anything about Stony Brook University.
 
 Some popular questions:
 • "What is the tuition for in-state undergrad students?"
 • "How do I apply for on-campus housing?"
-• "What financial aid options are available?"
-• "Where can I get help with my NetID or SBU account?" """
+• "Who are the Computer Science professors?"
+• "Where can I get help with my NetID?" """,
 
-OUT_OF_SCOPE_RESPONSE = """I can only help with official Stony Brook University information — that question is outside my scope.
+    """No problem! I'm here whenever you need me.
 
-If you have questions about SBU admissions, tuition, housing, financial aid, registration, dining, or other university services, I'm happy to help!"""
+You can ask me about admissions, tuition, faculty, housing, financial aid, clubs, career services, Brightspace, SOLAR, and much more. What would you like to know?""",
+]
 
-HUMAN_SUPPORT_RESPONSE = """I understand — for urgent matters or to speak with someone directly, please contact the **Dean of Students Office** (stonybrook.edu/dos) or call University Police at (631) 632-3333 for emergencies.
+OUT_OF_SCOPE_RESPONSES = [
+    """That's a bit outside what I cover — I'm specialized in official Stony Brook University information.
 
-If you're going through a difficult time, **CAPS (Counseling and Psychological Services)** is available at stonybrook.edu/caps."""
+I can help with SBU admissions, tuition, housing, financial aid, faculty, registration, dining, IT, and more. Is there anything SBU-related I can help with?""",
 
-NO_RELIABLE_SOURCE_RESPONSE = """I couldn't find reliable official SBU information for that question.
+    """I'm best suited for questions about Stony Brook University specifically. That topic falls outside my scope.
 
-For accurate and up-to-date information, I recommend:
-- Visiting **stonybrook.edu** directly
-- Contacting the relevant university office
+Feel free to ask me about SBU programs, services, faculty, campus life, or anything else related to the university!""",
+]
+
+HUMAN_SUPPORT_RESPONSE = """I understand — for urgent matters or to speak with someone directly:
+
+• **Dean of Students Office**: stonybrook.edu/dos
+• **University Police** (non-emergency): (631) 632-3333
+• **Emergency**: 911
+
+If you're going through a difficult time, **CAPS (Counseling and Psychological Services)** is available at stonybrook.edu/caps — you don't have to go through this alone."""
+
+NO_RELIABLE_SOURCE_RESPONSE = """I couldn't find reliable official SBU information for that question in my sources.
+
+For accurate and up-to-date information:
+- Visit **stonybrook.edu** directly
+- Contact the relevant university office
 
 Would you like help finding the right office or resource?"""
+
+
+def _pick(responses: list[str]) -> str:
+    """Pick a response at random for variety."""
+    return random.choice(responses)
+
+
+def _is_thanks(query: str) -> bool:
+    q = query.lower().strip()
+    return any(kw in q for kw in ["thank", "thanks", "thx", "ty", "appreciate", "helpful", "that helped", "great answer", "perfect"])
+
+
+def _is_farewell(query: str) -> bool:
+    q = query.lower().strip()
+    return any(kw in q for kw in ["bye", "goodbye", "see ya", "take care", "later", "cya", "good night", "goodnight"])
 
 PRIVATE_REFUSAL_TEMPLATE = """I don't have access to personal student account information — that's outside my current scope.
 
@@ -177,13 +252,18 @@ async def generate_answer(
     """
 
     if intent == "greeting":
-        return GREETING_RESPONSE, 1.0
+        # Distinguish thanks and farewells from hellos
+        if _is_thanks(question):
+            return _pick(THANKS_RESPONSES), 1.0
+        if _is_farewell(question):
+            return _pick(FAREWELL_RESPONSES), 1.0
+        return _pick(GREETING_RESPONSES), 1.0
 
     if intent == "no_meaningful_query":
-        return NO_MEANING_RESPONSE, 1.0
+        return _pick(NO_MEANING_RESPONSES), 1.0
 
     if intent == "out_of_scope_non_sbu":
-        return OUT_OF_SCOPE_RESPONSE, 1.0
+        return _pick(OUT_OF_SCOPE_RESPONSES), 1.0
 
     if intent == "private_account_specific":
         return _build_private_refusal(question), 1.0

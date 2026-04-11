@@ -45,10 +45,14 @@ INTENTS = {
 # ─── Rule-based fast paths (intentionally minimal) ───────────────────
 
 FAST_GREETING = re.compile(
-    r"^\s*(hi+|hello+|hey+|howdy|greetings|good (morning|afternoon|evening)|"
-    r"thanks?|thank you|thx|ty|bye+|goodbye|see ya|take care|"
-    r"ok+|okay|got it|sounds good|great|awesome|perfect|"
-    r"who are you\??|what can you do\??|what do you help with\??"
+    r"^\s*(hi+|hello+|hey+|howdy|greetings|good (morning|afternoon|evening|day)|"
+    r"thanks?|thank you|thx|ty|many thanks|appreciate (it|that|your help)|"
+    r"that('s| was) (helpful|great|perfect|awesome|amazing|useful)|"
+    r"bye+|goodbye|good ?night|see ya|take care|cya|later|"
+    r"ok+|okay|got it|sounds good|great|awesome|perfect|nice|cool|"
+    r"who are you\??|what can you do\??|what do you help with\??|"
+    r"what('s| is) (your name|ask seawolves)\??|"
+    r"can you help( me)?\??|are you (a bot|an ai|real)\??"
     r")\s*[!?.]*\s*$",
     re.IGNORECASE,
 )

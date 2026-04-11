@@ -100,6 +100,7 @@ def category_names_map() -> dict[str, str]:
         "safety_emergency":         "Safety & Emergency",
         "research":                 "Research",
         "graduation":               "Graduation & Commencement",
+        "sbu_general":              "About Stony Brook University",
     }
 
 
