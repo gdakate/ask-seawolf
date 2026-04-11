@@ -4,7 +4,7 @@ import Link from "next/link";
 const PLATFORMS = [
   {
     href: "/chat",
-    label: "SB-Alumni",
+    label: "Ask Seawolf",
     tagline: "University Q&A",
     desc: "Ask anything about SBU — admissions, tuition, housing, financial aid, courses. Get instant answers grounded in official university sources.",
     features: ["RAG-powered search", "Source citations", "Office routing"],
@@ -140,7 +140,7 @@ export default function SeaportHome() {
             </Link>
             <Link href="/chat"
               className="px-8 py-3.5 rounded-xl border border-[var(--border)] bg-white/50 dark:bg-[var(--bg-secondary)]/50 backdrop-blur-sm text-[var(--text-secondary)] hover:text-[var(--accent)] hover:border-[var(--accent)]/50 transition-colors text-base font-medium">
-              SB-Alumni →
+              Ask Seawolf →
             </Link>
           </div>
         </div>
@@ -167,7 +167,7 @@ export default function SeaportHome() {
           </h2>
         </div>
 
-        {/* Card 1 — SB-Alumni */}
+        {/* Card 1 — Ask Seawolf */}
         <Link href="/chat" className="group block">
           <div className="rounded-3xl overflow-hidden border border-[var(--border)] bg-white dark:bg-[var(--bg-secondary)] shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
             <div className="flex flex-col sm:flex-row">
@@ -184,7 +184,7 @@ export default function SeaportHome() {
                     <path d="M4 36 Q12 30 20 33 Q28 36 36 30" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
                   </svg>
                 </div>
-                <p className="text-white font-black text-xl tracking-tight leading-none">SB-Alumni</p>
+                <p className="text-white font-black text-xl tracking-tight leading-none">Ask Seawolf</p>
               </div>
               {/* White content panel */}
               <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center gap-4 p-6 sm:p-8">

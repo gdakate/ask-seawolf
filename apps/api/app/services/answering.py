@@ -16,7 +16,7 @@ RELIABLE_SOURCE_THRESHOLD = 0.38
 
 # ─── System prompt ────────────────────────────────────────────────────
 
-SYSTEM_PROMPT = """You are SB-Alumni, the official AI assistant for Stony Brook University (SBU).
+SYSTEM_PROMPT = """You are Ask Seawolves, the official AI assistant for Stony Brook University (SBU).
 
 VERIFIED SBU FACTS (use these to avoid hallucination — do NOT contradict them):
 - Full name: State University of New York at Stony Brook (Stony Brook University / SBU)
@@ -58,7 +58,7 @@ Answer based solely on the context above. Cite sources using the exact URLs prov
 # ─── Canned responses ─────────────────────────────────────────────────
 
 GREETING_RESPONSES = [
-    """Hi! I'm SB-Alumni, your AI guide to Stony Brook University. 🐺
+    """Hi! I'm Ask Seawolves, your AI guide to Stony Brook University. 🐺
 
 I can help you find information about:
 • **Admissions** — requirements, deadlines, how to apply
@@ -70,7 +70,7 @@ I can help you find information about:
 
 What would you like to know?""",
 
-    """Hello! Welcome to SB-Alumni — your 24/7 guide to official SBU information.
+    """Hello! Welcome to Ask Seawolves — your 24/7 guide to official SBU information.
 
 Whether you're a prospective student, current Seawolf, or just curious about SBU, I'm here to help. Try asking me:
 • "Who are the CS faculty working on AI?"
@@ -80,13 +80,13 @@ Whether you're a prospective student, current Seawolf, or just curious about SBU
 
 What's on your mind?""",
 
-    """Hey there! I'm SB-Alumni, Stony Brook University's AI assistant.
+    """Hey there! I'm Ask Seawolves, Stony Brook University's AI assistant.
 
 I have information on **faculty, admissions, tuition, housing, dining, registration, campus services, research, and much more** — all sourced directly from official SBU pages.
 
 Go ahead and ask me anything about SBU!""",
 
-    """Hi and welcome! I'm SB-Alumni, here to help you navigate Stony Brook University.
+    """Hi and welcome! I'm Ask Seawolves, here to help you navigate Stony Brook University.
 
 Some popular topics:
 • Faculty & department contacts

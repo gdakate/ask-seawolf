@@ -133,7 +133,7 @@ CATEGORY_ROUTING = [
     (["about sbu", "about stony brook", "when was sbu founded", "sbu mascot",
       "seawolf", "wolfie", "sbu ranking", "sbu president", "where is sbu",
       "sbu location", "sbu history", "what is sbu", "tell me about sbu",
-      "sb-alumni", "who are you", "what can you do"],
+      "ask seawolves", "who are you", "what can you do"],
      ["About Stony Brook"]),
 ]
 

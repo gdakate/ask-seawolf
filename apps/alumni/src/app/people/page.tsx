@@ -185,7 +185,7 @@ export default function PeoplePage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-display text-2xl font-bold text-[var(--text-primary)]">People</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-0.5">AI-matched SB-Alumni based on your profile</p>
+        <p className="text-sm text-[var(--text-muted)] mt-0.5">AI-matched Seawolves based on your profile</p>
       </div>
 
       {/* Tabs */}
@@ -220,7 +220,7 @@ export default function PeoplePage() {
                 Complete your profile first
               </h2>
               <p className="text-[var(--text-muted)] text-sm mb-6">
-                Tell us about your background so we can find the best SB-Alumni matches for you.
+                Tell us about your background so we can find the best Seawolves for you.
               </p>
               <Link href="/onboarding"
                 className="inline-block px-8 py-3 btn-water text-white rounded-xl font-semibold">

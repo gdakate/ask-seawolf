@@ -37,7 +37,7 @@ export default function HomePage() {
           <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-[var(--text-primary)] mb-5 tracking-tight">
             Find Your{" "}
             <span className="text-[var(--accent)] relative">
-              SB-Alumni Network
+              Seawolf Network
               <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gradient-to-r from-water-shallow via-water-current to-water-teal rounded-full opacity-70" />
             </span>
           </h1>
