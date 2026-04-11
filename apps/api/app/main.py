@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.routers.public import router as public_router
 from app.routers.admin import router as admin_router
 from app.routers.alumni import router as alumni_router
+from app.routers.studycoach import router as studycoach_router
 
 settings = get_settings()
 logger = structlog.get_logger()
@@ -41,6 +42,7 @@ app.add_middleware(
 app.include_router(public_router, prefix="/api", tags=["Public"])
 app.include_router(admin_router, prefix="/api", tags=["Admin"])
 app.include_router(alumni_router, prefix="/api", tags=["Alumni"])
+app.include_router(studycoach_router, prefix="/api", tags=["StudyCoach"])
 
 
 @app.get("/")
