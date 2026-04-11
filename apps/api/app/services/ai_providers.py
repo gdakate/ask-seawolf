@@ -297,21 +297,33 @@ class BedrockLLMProvider(LLMProvider):
 
 # ─── Factory ─────────────────────────────────────────────────────────
 
+_embedding_provider: EmbeddingProvider | None = None
+_llm_provider: LLMProvider | None = None
+
+
 def get_embedding_provider() -> EmbeddingProvider:
-    if settings.ai_provider == "local":
-        return LocalEmbeddingProvider()
-    elif settings.ai_provider == "openai":
-        return OpenAIEmbeddingProvider()
-    elif settings.ai_provider == "bedrock":
-        return BedrockEmbeddingProvider()
-    return MockEmbeddingProvider()
+    global _embedding_provider
+    if _embedding_provider is None:
+        if settings.ai_provider == "local":
+            _embedding_provider = LocalEmbeddingProvider()
+        elif settings.ai_provider == "openai":
+            _embedding_provider = OpenAIEmbeddingProvider()
+        elif settings.ai_provider == "bedrock":
+            _embedding_provider = BedrockEmbeddingProvider()
+        else:
+            _embedding_provider = MockEmbeddingProvider()
+    return _embedding_provider
 
 
 def get_llm_provider() -> LLMProvider:
-    if settings.ai_provider == "local":
-        return OllamaLLMProvider()
-    elif settings.ai_provider == "openai":
-        return OpenAILLMProvider()
-    elif settings.ai_provider == "bedrock":
-        return BedrockLLMProvider()
-    return MockLLMProvider()
+    global _llm_provider
+    if _llm_provider is None:
+        if settings.ai_provider == "local":
+            _llm_provider = OllamaLLMProvider()
+        elif settings.ai_provider == "openai":
+            _llm_provider = OpenAILLMProvider()
+        elif settings.ai_provider == "bedrock":
+            _llm_provider = BedrockLLMProvider()
+        else:
+            _llm_provider = MockLLMProvider()
+    return _llm_provider

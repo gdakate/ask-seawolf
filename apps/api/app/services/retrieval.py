@@ -120,6 +120,8 @@ async def retrieve_chunks(
     category_hints = _detect_category_hints(query)
 
     # ── Primary: global vector search (fetch 3× top_k for re-ranking) ─
+    # Set probes=10 so IVFFlat searches 10 of 110 lists — better recall with minimal cost
+    await db.execute(text("SET LOCAL ivfflat.probes = 10"))
     sql = text("""
         SELECT c.id, c.content, c.heading, c.chunk_index, c.metadata,
                d.title, d.source_url, d.content_type, d.is_archived,
